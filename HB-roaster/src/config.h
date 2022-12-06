@@ -10,17 +10,8 @@ struct  data_to_artisan {
     double temp_env;//环境温度
     double humi_env;//环境湿度
     double  amp_env;//环境大气压强
-    int    heater_powerM ;//火力 手动
-    int    heater_powerA ;//火力 自动
-    int    HPM;//HPM 模式选择；>0 -> A <0 ->M  //default auto mode
-    int    air;//风门
-    int    roll;//搅拌
-    int    cooling; //冷却
-    int    sv ; // pid set value manual mode
-    int    sv_auto; //pid set value auto mode
-    int    targetC;// 豆温预设
-    int    MODE;//是否自动烘焙
- } To_artisan ={10.0,10.0,980.00,0,0,100,0,0,0,25,25,25,-100};
+
+ } To_artisan ={10.0,10.0,980.00};
 //end of 定义artisan 交互的数组
 
 
