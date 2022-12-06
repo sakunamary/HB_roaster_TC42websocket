@@ -1,5 +1,4 @@
 
-
 /*
 主要实现目标：
 1:串口(serail2)获取USB来的数据 用分别赋值到结构体
@@ -48,7 +47,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 String IpAddressToString(const IPAddress &ipAddress);                         //转换IP地址格式
 void recvMsg(uint8_t *data, size_t len);
 String processor(const String &var);
-
+void notFound(AsyncWebServerRequest *request);  
 
 
 
@@ -173,8 +172,10 @@ void recvMsg(uint8_t *data, size_t len){
   WebSerial.println(d);
 }
 
-
-
+void notFound(AsyncWebServerRequest *request)
+{
+    request->send(404, "text/plain", "Opps....Not found");
+}
 
 
 
@@ -264,11 +265,13 @@ void setup() {
     Serial_debug.print("TC4-WB's IP:");
 }
 
-
+  
 
 
 
 
 void loop() {
   // put your main code here, to run repeatedly:
+
+  webSocket.loop(); //处理websocketmie
 }

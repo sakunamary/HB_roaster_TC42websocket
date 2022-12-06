@@ -2,17 +2,6 @@
 #define __INDEX_H__
 
 
-
-// 网页设置的参数
- typedef struct eeprom_settings 
-{
-  char ssid[60]; //增加到30个字符
-  char password[60]; //增加到30个字符
-} user_wifi_t;
-
-extern user_wifi_t  user_wifi ;
-
-
 ////////////////////////////////////////////////////////////////
 //
 //  web page raw data 

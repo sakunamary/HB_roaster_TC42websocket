@@ -30,16 +30,19 @@ struct  data_HB_out {
 } data_HB={4 ,"0","-",15.0,15.0,0,0,0,0,0};
 // end of 设置输出命令的结构数据
 
-//定义 网页wifi 内容
-struct settings {
+
+// 网页设置的参数
+ typedef struct eeprom_settings 
+{
   char ssid[60]; //增加到30个字符
   char password[60]; //增加到30个字符
-} user_wifi = {};
+} user_wifi_t;
+
+extern user_wifi_t  user_wifi ;
 
 
 
 
 
 
-
-#endif
+#endif       
