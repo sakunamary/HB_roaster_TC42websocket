@@ -20,12 +20,25 @@
 #include <ESPAsyncWebServer.h>
 #include <AsyncElegantOTA.h>
 #include "WebSerial.h"
-
 // Websockets Lib by links2004
 #include <WebSocketsServer.h>
 // JSON for Artisan Websocket implementation
 #include "ArduinoJson.h"
 #include <EEPROM.h>
+
+
+
+#include "DFRobot_AHT20.h"
+#include <Adafruit_BMP085.h>
+#include <StringTokenizer.h>
+
+
+
+//串口初始化
+HardwareSerial serial_with_drumer(1); //获取数据
+HardwareSerial Serial_debug(0);       //debug
+
+
 
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length);
