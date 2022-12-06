@@ -31,7 +31,7 @@
 #include <Adafruit_BMP085.h>
 #include <StringTokenizer.h>
 
-
+String local_IP;
 
 //串口初始化
 HardwareSerial Serial_with_drumer(1); //获取数据
@@ -100,21 +100,37 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
         if (command == "getBT")
         {
             root["id"] = ln_id;
-            data["BT"] = BT_AvgTemp;
-            // Serial_debug.printf("getBT created BT: %4.2f \n",cmd_M1.TC1);
+            data["BT"] = To_artisan.bt;
         }
         else if (command == "getET")
         {
             root["id"] = ln_id;
-            data["ET"] = ET_CurTemp;
+            data["ET"] = To_artisan.et;
+        }
+        else if (command == "getExhaust")
+        {
+            root["id"] = ln_id;
+            data["Exhaust"] = To_artisan.Exhaust;
             // Serial_debug.printf("getET created ET: %4.2f \n",cmd_M1.TC2);
         }
-
+        else if (command == "getInlet")
+        {
+            root["id"] = ln_id;
+            data["Inlet"] = To_artisan.Inlet;
+            // Serial_debug.printf("getET created ET: %4.2f \n",cmd_M1.TC2);
+        }
+        else if (command == "getAT")
+        {
+            root["id"] = ln_id;
+            data["AT"] = To_artisan.AT;
+            // Serial_debug.printf("getET created ET: %4.2f \n",cmd_M1.TC2);
+        }
         else if (command == "getData")
         {
             root["id"] = ln_id;
-            data["BT"] = BT_AvgTemp;
-            data["ET"] = ET_CurTemp;
+            data["BT"] = To_artisan.bt;
+            data["ET"] = To_artisan.et;
+            
 
             Serial.println("getData");
         }

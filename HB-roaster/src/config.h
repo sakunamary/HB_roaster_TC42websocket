@@ -4,14 +4,21 @@
 
 
 #define BAUDRATE 115200  //serial port baudrate
+#define VERSION "1.0.0"
+
 
 //定义artisan 交互的数组
 struct  data_to_artisan {
     double temp_env;//环境温度
     double humi_env;//环境湿度
     double  amp_env;//环境大气压强
+    double bt;
+    double et;
+    double Exhaust;
+    double Inlet;
+    double AT;
 
- } To_artisan ={10.0,10.0,980.00};
+ } To_artisan ={10.0,10.0,980.00,0.0,0.0,0.0,0.0,0.0};
 //end of 定义artisan 交互的数组
 
 
