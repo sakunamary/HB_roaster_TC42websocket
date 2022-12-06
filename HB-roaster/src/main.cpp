@@ -35,16 +35,19 @@
 
 
 //串口初始化
-HardwareSerial serial_with_drumer(1); //获取数据
+HardwareSerial Serial_with_drumer(1); //获取数据
 HardwareSerial Serial_debug(0);       //debug
 
-
+// object declare
+AsyncWebServer server_OTA(80);
+WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
+user_wifi_t user_wifi = {" ", " "};
 
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length);
-
-
-
+String IpAddressToString(const IPAddress &ipAddress);                         //转换IP地址格式
+void recvMsg(uint8_t *data, size_t len);
+String processor(const String &var);
 
 
 
@@ -142,8 +145,33 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 }
 
 
+String IpAddressToString(const IPAddress &ipAddress)
+{
+    return String(ipAddress[0]) + String(".") +
+           String(ipAddress[1]) + String(".") +
+           String(ipAddress[2]) + String(".") +
+           String(ipAddress[3]);
+}
 
+String processor(const String &var)
+{
+    //Serial.println(var);
+if (var == "version")
+    {
+        return VERSION;
+    }
+    return String();
+}
 
+/* Message callback of WebSerial */
+void recvMsg(uint8_t *data, size_t len){
+  WebSerial.println("Received Data...");
+  String d = "";
+  for(int i=0; i < len; i++){
+    d += char(data[i]);
+  }
+  WebSerial.println(d);
+}
 
 
 
@@ -152,6 +180,88 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 
 void setup() {
   // put your setup code here, to run once:
+
+ Serial_debug.begin(BAUDRATE);
+ Serial_with_drumer.begin(BAUDRATE);
+ Serial_debug.printf("\nHB Roaster is  STARTING...\n");
+
+   // 读取EEPROM 数据
+    EEPROM.begin(sizeof(user_wifi));
+    EEPROM.get(0, user_wifi);
+
+
+ 
+//初始化wifi 
+   WiFi.mode(WIFI_STA);
+    WiFi.begin(user_wifi.ssid, user_wifi.password);
+
+    byte tries = 0;
+    while (WiFi.status() != WL_CONNECTED)
+    {
+
+        delay(1000);
+
+        if (tries++ > 5)
+        {
+
+            // Serial_debug.println("WiFi.mode(AP):");
+            WiFi.mode(WIFI_AP);
+            WiFi.softAP("HB_ROASTER", "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
+            break;
+        }
+        // show AP's IP
+    }
+
+    if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
+    {
+        Serial.println(IpAddressToString(WiFi.softAPIP()));
+        local_IP = IpAddressToString(WiFi.softAPIP());
+    }
+    else
+    {
+        Serial.println(IpAddressToString(WiFi.localIP()));
+        local_IP = IpAddressToString(WiFi.localIP());
+    }
+
+/*
+   // init websocket
+    webSocket.begin();
+    Serial.println("WebSocket started!");
+
+    // event  websocket handler
+    webSocket.onEvent(webSocketEvent);
+*/
+    // 网页处理
+    server_OTA.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+                  { request->send_P(200, "text/html", index_html, processor); });
+
+    // get the value from index.html
+    server_OTA.on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
+                  {
+//get value form webpage      
+    strncpy(user_wifi.ssid,request->getParam("ssid")->value().c_str(), sizeof(user_wifi.ssid) );
+    strncpy(user_wifi.password,request->getParam("password")->value().c_str(), sizeof(user_wifi.password) );
+    user_wifi.ssid[request->getParam("ssid")->value().length()] = user_wifi.password[request->getParam("password")->value().length()] = '\0';  
+//Svae EEPROM 
+    EEPROM.put(0, user_wifi);
+    EEPROM.commit();
+
+//output wifi_sussce html;
+    request->send_P(200, "text/html", wifi_sussce_html); });
+                  
+    server_OTA.onNotFound(notFound); // 404 page seems not necessary...
+
+
+
+    WebSerial.begin(&server_OTA);
+    WebSerial.msgCallback(recvMsg);
+
+    AsyncElegantOTA.begin(&server_OTA); // Start ElegantOTA
+
+    server_OTA.begin();
+   // WebSerial.println("HTTP server started");
+    Serial.println("HTTP server started");
+    Serial_debug.print("TC4-WB's IP:");
 }
 
 

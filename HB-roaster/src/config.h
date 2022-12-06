@@ -3,7 +3,7 @@
 #define __CONFIG_H__
 
 
-#define BAUDRATE 57600  //serial port baudrate
+#define BAUDRATE 115200  //serial port baudrate
 
 //定义artisan 交互的数组
 struct  data_to_artisan {
