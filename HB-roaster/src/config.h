@@ -6,6 +6,8 @@
 #define BAUDRATE 115200  //serial port baudrate
 #define VERSION "1.0.0"
 
+#define WEBSERIAL_DEBUG
+#define DEBUG_MODE
 
 //定义artisan 交互的数组
 struct  data_to_artisan {
@@ -16,6 +18,7 @@ struct  data_to_artisan {
     double et;
     double Exhaust;
     double Inlet;
+    double Null_data;
     double AT;
 
  } To_artisan ={10.0,10.0,980.00,0.0,0.0,0.0,0.0,0.0};

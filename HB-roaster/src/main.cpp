@@ -56,7 +56,7 @@ String IpAddressToString(const IPAddress &ipAddress);                         //
 void recvMsg(uint8_t *data, size_t len);
 String processor(const String &var);
 void notFound(AsyncWebServerRequest *request);  
-
+void ReadData_from_drumer();//读取 锅炉的数值 指令  750ms 运行一次 。剥离数据后写入cmd_M1 和 To_artisan  
 
 
 
@@ -66,8 +66,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 {
     // Artisan schickt Anfrage als TXT
     // TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
-
-
 
 
     const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
@@ -193,18 +191,65 @@ if (var == "version")
 
 
 
+void ReadData_from_drumer(void) {
+String msg_raw;
+int loop_i=1; 
+
+Serial_with_drumer.print("READ,");
+WebSerial.println("sended READ command");
+
+delay(250);
+
+//读取串口数据
+if  (Serial_with_drumer.available()>0)
+{
+    msg_raw = Serial_with_drumer.readStringUntil('\n'); //读取数据
+
+    #if defined DEBUG_MODE
+        Serial_debug.println("read from drummer raw :");
+        Serial_debug.println(msg_raw); 
+        WebSerial.println("read from drummer raw :");
+        WebSerial.println(msg_raw); 
+
+    #endif 
+
+  StringTokenizer tokens(msg_raw, ",");
+  while(tokens.hasNext()){
+    //String temp_cmd = tokens.nextToken();
+    if (tokens.nextToken() == "") {
+        loop_i =1 ; 
+    } else {
+
+          if (loop_i == 1) { To_artisan.bt = tokens.nextToken().toDouble(); }
+          else if (loop_i == 2) {To_artisan.et = tokens.nextToken().toDouble(); }
+          else if (loop_i == 3) {To_artisan.Exhaust = tokens.nextToken().toDouble(); }
+          else if (loop_i == 4) {To_artisan.Inlet = tokens.nextToken().toDouble(); }
+          else if (loop_i == 5) {To_artisan.AT = tokens.nextToken().toDouble(); }
+          else if (loop_i == 6) {To_artisan.Null_data = tokens.nextToken().toDouble(); loop_i = 1 ; }
+     loop_i++;
+    }
+
+   }
+}  //完成一次读取和处理数据
 
 
 
+}
 
+//1.0,2.0,3.0,4.0,5.0,6.0
 /* Message callback of WebSerial */
 void recvMsg(uint8_t *data, size_t len){
   WebSerial.println("Received Data...");
   String d = "";
+  int loop_i=1;   
   for(int i=0; i < len; i++){
     d += char(data[i]);
   }
+  WebSerial.print("msg from webserial:");
   WebSerial.println(d);
+  Serial_debug.print("msg from webserial:");
+  Serial_debug.println(d);
+
 }
 
 void notFound(AsyncWebServerRequest *request)
@@ -226,7 +271,6 @@ void setup() {
  Serial_debug.printf("\nHB Roaster is  STARTING...\n");
  WebSerial.begin(&server_OTA);
  WebSerial.msgCallback(recvMsg);
- WebSerial.println("\nHB Roaster is  STARTING...\n");
 
 
    // 读取EEPROM 数据
@@ -270,19 +314,17 @@ void setup() {
         // show AP's IP
     }
     Serial_debug.print("TC4-WB's IP:");
-    WebSerial.print("TC4-WB's IP:");
+
 
     if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
     {
         Serial_debug.println(IpAddressToString(WiFi.softAPIP()));
-        WebSerial.println(IpAddressToString(WiFi.softAPIP()));
         local_IP = IpAddressToString(WiFi.softAPIP());
 
     }
     else
     {
         Serial_debug.println(IpAddressToString(WiFi.localIP()));
-        WebSerial.println(IpAddressToString(WiFi.localIP()));
         local_IP = IpAddressToString(WiFi.localIP());
     }
 
@@ -293,7 +335,7 @@ void setup() {
     webSocket.onEvent(webSocketEvent);
 
     Serial_debug.println("WebSocket started!");
-    WebSerial.println("WebSocket started!");
+
 
 
     // 网页处理
@@ -324,7 +366,10 @@ void setup() {
    // WebSerial.println("HTTP server started");
     Serial_debug.println("HTTP server started");
 
-
+    WebSerial.println("\nHB Roaster is  STARTING...\n");
+    WebSerial.print("TC4-WB's IP:");
+    WebSerial.println(local_IP);
+    WebSerial.println("WebSocket started!");
 
 }
 
@@ -336,8 +381,6 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
            webSocket.loop(); //处理websocketmie
-
-
 
 
 }
