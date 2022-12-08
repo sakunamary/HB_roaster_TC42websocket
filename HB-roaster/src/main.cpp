@@ -218,26 +218,17 @@ if  (Serial_with_drumer.available()>0)
 
   StringTokenizer tokens(msg_raw, ",");
   while(tokens.hasNext()){
-    //String temp_cmd = tokens.nextToken();
-    if (tokens.nextToken() == "") {
-        loop_i =1 ; 
-    } else {
-
-          if (loop_i == 1) { To_artisan.bt = tokens.nextToken().toDouble(); }
-          else if (loop_i == 2) {To_artisan.et = tokens.nextToken().toDouble(); }
-          else if (loop_i == 3) {To_artisan.Exhaust = tokens.nextToken().toDouble(); }
-          else if (loop_i == 4) {To_artisan.Inlet = tokens.nextToken().toDouble(); }
-          else if (loop_i == 5) {To_artisan.AT = tokens.nextToken().toDouble(); }
+          if (loop_i == 1) { To_artisan.bt = tokens.nextToken().toDouble();      loop_i++;}
+          else if (loop_i == 2) {To_artisan.et = tokens.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 3) {To_artisan.Exhaust = tokens.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 4) {To_artisan.Inlet = tokens.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 5) {To_artisan.AT = tokens.nextToken().toDouble();  loop_i++;}
           else if (loop_i == 6) {To_artisan.Null_data = tokens.nextToken().toDouble(); loop_i = 1 ; }
-     loop_i++;
-    }
+   }
 
    }
 }  //完成一次读取和处理数据
 
-
-
-}
 
 //1.0,2.0,3.0,4.0,5.0,6.0
 /* Message callback of WebSerial */
@@ -255,20 +246,12 @@ void recvMsg(uint8_t *data, size_t len){
 
   StringTokenizer tokens(d, ",");
   while(tokens.hasNext()){
-    //String temp_cmd = tokens.nextToken();
-    if (tokens.nextToken() == "") {
-        loop_i =1 ; 
-    } else {
-
-          if (loop_i == 1) { To_artisan.bt = tokens.nextToken().toDouble(); }
-          else if (loop_i == 2) {To_artisan.et = tokens.nextToken().toDouble(); }
-          else if (loop_i == 3) {To_artisan.Exhaust = tokens.nextToken().toDouble(); }
-          else if (loop_i == 4) {To_artisan.Inlet = tokens.nextToken().toDouble(); }
-          else if (loop_i == 5) {To_artisan.AT = tokens.nextToken().toDouble(); }
+          if (loop_i == 1) { To_artisan.bt = tokens.nextToken().toDouble();      loop_i++;}
+          else if (loop_i == 2) {To_artisan.et = tokens.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 3) {To_artisan.Exhaust = tokens.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 4) {To_artisan.Inlet = tokens.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 5) {To_artisan.AT = tokens.nextToken().toDouble();  loop_i++;}
           else if (loop_i == 6) {To_artisan.Null_data = tokens.nextToken().toDouble(); loop_i = 1 ; }
-     loop_i++;
-    }
-
    }
 }
 
