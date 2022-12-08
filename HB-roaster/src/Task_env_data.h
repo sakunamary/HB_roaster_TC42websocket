@@ -31,7 +31,7 @@ void TaskEnvData(void *pvParameters)
 
         // Perform task actions from here
         // Read BT from MAX6675 thermal couple
-        if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS)
+        if (xSemaphoreTake(xTaskEnvDataMutex, xIntervel) == pdPASS)
         {
 
                 if(aht20.startMeasurementReady(/* crcEn = */true))

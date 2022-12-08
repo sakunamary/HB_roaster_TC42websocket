@@ -30,7 +30,7 @@
 #include "DFRobot_AHT20.h"
 #include <Adafruit_BMP085.h>
 //Ticker to execute actions at defined intervals
-//#include "TickTwo.h" //ESP8266 compatible version of Ticker by sstaub
+#include "TickTwo.h" //ESP8266 compatible version of Ticker by sstaub
 
 //drumer 命令串字符处理分割
 #include <StringTokenizer.h>
@@ -65,11 +65,18 @@ SemaphoreHandle_t xTaskEnvDataMutex = NULL;
 
 
 
+
+
+
+
 // Define Artisan Websocket events to exchange data
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
 {
     // Artisan schickt Anfrage als TXT
     // TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
+
+
+
 
     const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
     DynamicJsonDocument doc(capacity);
@@ -215,56 +222,40 @@ void notFound(AsyncWebServerRequest *request)
 
 
 
-void TaskSerialHandle(void *pvParameters)
-{
-
- /* Variable Definition */
-    (void)pvParameters;
-    TickType_t xLastWakeTime;
-
-    const TickType_t xIntervel = ( 2* 1000 * 1000) / portTICK_PERIOD_MS; //1分钟更新一次
-   /* Task Setup and Initialize */
-    // Initial the xLastWakeTime variable with the current time.
-    xLastWakeTime = xTaskGetTickCount();
-
-    for (;;) // A Task shall never return or exit.
-    {
-        // Wait for the next cycle (intervel 750ms).
-        vTaskDelayUntil(&xLastWakeTime, xIntervel);
-
-        // Perform task actions from here
-        // Read BT from MAX6675 thermal couple
-        if (xSemaphoreTake(xTaskEnvDataMutex, xIntervel) == pdPASS)
-        {
-           //fasong
-
-
-        }
-            xSemaphoreGive(xThermoDataMutex);
-           webSocket.loop(); //处理websocketmie
-        
-    }
-}
-
-
-
-
-
 
 
 void setup() {
   // put your setup code here, to run once:
+   xThermoDataMutex = xSemaphoreCreateMutex();
+
 
  Serial_debug.begin(BAUDRATE);
  Serial_with_drumer.begin(BAUDRATE);
  Serial_debug.printf("\nHB Roaster is  STARTING...\n");
+ WebSerial.begin(&server_OTA);
+ WebSerial.msgCallback(recvMsg);
+
 
    // 读取EEPROM 数据
     EEPROM.begin(sizeof(user_wifi));
     EEPROM.get(0, user_wifi);
 
 
- 
+// Setup tasks to run independently.
+    xTaskCreatePinnedToCore(
+        TaskEnvData, "env_data" // 测量电池电源数据，每分钟测量一次
+        ,
+        1024*4 // This stack size can be checked & adjusted by reading the Stack Highwater
+        ,
+        NULL, 1 // Priority, with 1 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+        ,
+        NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
+    );
+
+
+
+
+
 //初始化wifi 
    WiFi.mode(WIFI_STA);
     WiFi.begin(user_wifi.ssid, user_wifi.password);
@@ -285,26 +276,33 @@ void setup() {
         }
         // show AP's IP
     }
+    Serial_debug.print("TC4-WB's IP:");
+    WebSerial.print("TC4-WB's IP:");
 
     if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
     {
-        Serial.println(IpAddressToString(WiFi.softAPIP()));
+        Serial_debug.println(IpAddressToString(WiFi.softAPIP()));
+        WebSerial.println(IpAddressToString(WiFi.softAPIP()));
         local_IP = IpAddressToString(WiFi.softAPIP());
+
     }
     else
     {
-        Serial.println(IpAddressToString(WiFi.localIP()));
+        Serial_debug.println(IpAddressToString(WiFi.localIP()));
+        WebSerial.println(IpAddressToString(WiFi.localIP()));
         local_IP = IpAddressToString(WiFi.localIP());
     }
 
-/*
+
    // init websocket
     webSocket.begin();
-    Serial.println("WebSocket started!");
-
     // event  websocket handler
     webSocket.onEvent(webSocketEvent);
-*/
+
+    Serial_debug.println("WebSocket started!");
+    WebSerial.println("WebSocket started!");
+
+
     // 网页处理
     server_OTA.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
                   { request->send_P(200, "text/html", index_html, processor); });
@@ -327,15 +325,14 @@ void setup() {
 
 
 
-    WebSerial.begin(&server_OTA);
-    WebSerial.msgCallback(recvMsg);
-
     AsyncElegantOTA.begin(&server_OTA); // Start ElegantOTA
 
     server_OTA.begin();
    // WebSerial.println("HTTP server started");
-    Serial.println("HTTP server started");
-    Serial_debug.print("TC4-WB's IP:");
+    Serial_debug.println("HTTP server started");
+
+
+
 }
 
   
@@ -345,5 +342,11 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+
+           webSocket.loop(); //处理websocketmie
+
+
+
+
 
 }
