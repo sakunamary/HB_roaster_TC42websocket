@@ -146,7 +146,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
             data["AT"] = To_artisan.AT;
         }
 
-        char buffer[300];                        // create temp buffer 200
+        char buffer[200];                        // create temp buffer 200
         size_t len = serializeJson(doc, buffer); // serialize to buffer
 
         webSocket.sendTXT(num, buffer);
