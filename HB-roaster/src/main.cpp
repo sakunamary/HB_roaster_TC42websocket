@@ -218,7 +218,7 @@ int loop_i=1;
 Serial_with_drumer.print("READ\n");
 WebSerial.println("sended READ command");
 
-delay(250);
+delay(500);
 
 //读取串口数据
 if  (Serial_with_drumer.available()>0)
