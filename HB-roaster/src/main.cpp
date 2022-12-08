@@ -35,7 +35,6 @@
 //drumer 命令串字符处理分割
 #include <StringTokenizer.h>
 
-
 #include "Task_env_data.h"
 
 
@@ -67,7 +66,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     // Artisan schickt Anfrage als TXT
     // TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
 
-   // ReadData_from_drumer();
+    ReadData_from_drumer();//send the READ and get data 
 
     const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
     DynamicJsonDocument doc(capacity);
@@ -198,7 +197,7 @@ void ReadData_from_drumer(void) {
 String msg_raw;
 int loop_i=1; 
 
-Serial_with_drumer.print("READ,");
+Serial_with_drumer.print("READ\n");
 WebSerial.println("sended READ command");
 
 delay(250);
@@ -229,21 +228,46 @@ if  (Serial_with_drumer.available()>0)
    }
 }  //完成一次读取和处理数据
 
-
-//1.0,2.0,3.0,4.0,5.0,6.0
 /* Message callback of WebSerial */
 void recvMsg(uint8_t *data, size_t len){
   WebSerial.println("Received Data...");
-  String d = "";
+  String cmd = "";
   int loop_i=1;   
   for(int i=0; i < len; i++){
-    d += char(data[i]);
+    cmd += char(data[i]);
   }
-  WebSerial.print("msg from webserial:");
-  WebSerial.println(d);
-  Serial_debug.print("msg from webserial:");
-  Serial_debug.println(d);
+cmd.toUpperCase();
 
+  WebSerial.print("msg from webserial:");
+  WebSerial.println(cmd);
+  Serial_debug.print("msg from webserial:");
+  Serial_debug.println(cmd);
+
+if (cmd.indexOf("READ") == 0){
+    ReadData_from_drumer();
+    WebSerial.print("BT:");
+    WebSerial.println(To_artisan.bt); 
+    WebSerial.print("ET:");
+    WebSerial.println(To_artisan.et); 
+    WebSerial.print("Exhaust:");
+    WebSerial.println(To_artisan.Exhaust); 
+    WebSerial.print("Inlet:");
+    WebSerial.println(To_artisan.Inlet); 
+    WebSerial.print("AT:");
+    WebSerial.println(To_artisan.AT); 
+
+}
+if (cmd.indexOf("INFO") == 0)
+{
+    WebSerial.print("HB Roaster :");
+    WebSerial.println(VERSION); 
+    WebSerial.print("websocket IP:(port:8080)");
+    WebSerial.println(local_IP);
+    WebSerial.print("Serial baudrate:");
+    WebSerial.println(BAUDRATE); 
+}
+
+/*
   StringTokenizer tokens(d, ",");
   while(tokens.hasNext()){
           if (loop_i == 1) { To_artisan.bt = tokens.nextToken().toDouble();      loop_i++;}
@@ -253,6 +277,9 @@ void recvMsg(uint8_t *data, size_t len){
           else if (loop_i == 5) {To_artisan.AT = tokens.nextToken().toDouble();  loop_i++;}
           else if (loop_i == 6) {To_artisan.Null_data = tokens.nextToken().toDouble(); loop_i = 1 ; }
    }
+*/  
+    
+
 }
 
 void notFound(AsyncWebServerRequest *request)
@@ -364,11 +391,6 @@ void setup() {
     server_OTA.begin();
    // WebSerial.println("HTTP server started");
     Serial_debug.println("HTTP server started");
-
-    WebSerial.println("\nHB Roaster is  STARTING...\n");
-    WebSerial.print("TC4-WB's IP:");
-    WebSerial.println(local_IP);
-    WebSerial.println("WebSocket started!");
 
 }
 

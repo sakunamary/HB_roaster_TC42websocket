@@ -6,7 +6,6 @@
 #define BAUDRATE 115200  //serial port baudrate
 #define VERSION "1.0.0"
 
-#define WEBSERIAL_DEBUG
 #define DEBUG_MODE
 
 //定义artisan 交互的数组
