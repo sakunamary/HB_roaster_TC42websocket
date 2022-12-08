@@ -67,6 +67,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     // Artisan schickt Anfrage als TXT
     // TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
 
+   // ReadData_from_drumer();
 
     const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
     DynamicJsonDocument doc(capacity);
@@ -75,12 +76,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     {
     case WStype_DISCONNECTED:
         webSocket.sendTXT(num, "Disonnected");
-        Serial.printf("[%u] Disconnected!\n", num);
+        Serial_debug.printf("[%u] Disconnected!\n", num);
         break;
     case WStype_CONNECTED:
     {
         IPAddress ip = webSocket.remoteIP(num);
-        Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+        Serial_debug.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
 
         // send message to client
         webSocket.sendTXT(num, "Connected");
@@ -89,7 +90,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     case WStype_TEXT:
     {
         // DEBUG WEBSOCKET
-        Serial.printf("[%u] get Text: %s\n", num, payload);
+        Serial_debug.printf("[%u] get Text: %s\n", num, payload);
 
         // Extract Values lt. https://arduinojson.org/v6/example/http-client/
         // Artisan Anleitung: https://artisan-scope.org/devices/websockets/
@@ -121,14 +122,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
         else if (command == "getExhaust")
         {
             root["id"] = ln_id;
-            data["Exhaust"] = To_artisan.Exhaust;
-            // Serial_debug.printf("getET created ET: %4.2f \n",cmd_M1.TC2);
+            data["Exh"] = To_artisan.Exhaust;
+            
         }
         else if (command == "getInlet")
         {
             root["id"] = ln_id;
             data["Inlet"] = To_artisan.Inlet;
-            // Serial_debug.printf("getET created ET: %4.2f \n",cmd_M1.TC2);
+
         }
         else if (command == "getAT")
         {
@@ -141,17 +142,19 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
             root["id"] = ln_id;
             data["BT"] = To_artisan.bt;
             data["ET"] = To_artisan.et;
-            
-
-            Serial.println("getData");
+            data["Exh"] = To_artisan.Exhaust;
+            data["AT"] = To_artisan.AT;
         }
 
-        char buffer[200];                        // create temp buffer 200
+        char buffer[300];                        // create temp buffer 200
         size_t len = serializeJson(doc, buffer); // serialize to buffer
 
         webSocket.sendTXT(num, buffer);
         WebSerial.print("websocket send back: ");
         WebSerial.println(buffer);
+
+        Serial_debug.print("websocket send back: ");
+        Serial_debug.println(buffer);
 
         // send message to client
         // webSocket.sendTXT(num, "message here");
@@ -250,6 +253,23 @@ void recvMsg(uint8_t *data, size_t len){
   Serial_debug.print("msg from webserial:");
   Serial_debug.println(d);
 
+  StringTokenizer tokens(d, ",");
+  while(tokens.hasNext()){
+    //String temp_cmd = tokens.nextToken();
+    if (tokens.nextToken() == "") {
+        loop_i =1 ; 
+    } else {
+
+          if (loop_i == 1) { To_artisan.bt = tokens.nextToken().toDouble(); }
+          else if (loop_i == 2) {To_artisan.et = tokens.nextToken().toDouble(); }
+          else if (loop_i == 3) {To_artisan.Exhaust = tokens.nextToken().toDouble(); }
+          else if (loop_i == 4) {To_artisan.Inlet = tokens.nextToken().toDouble(); }
+          else if (loop_i == 5) {To_artisan.AT = tokens.nextToken().toDouble(); }
+          else if (loop_i == 6) {To_artisan.Null_data = tokens.nextToken().toDouble(); loop_i = 1 ; }
+     loop_i++;
+    }
+
+   }
 }
 
 void notFound(AsyncWebServerRequest *request)
@@ -336,8 +356,6 @@ void setup() {
 
     Serial_debug.println("WebSocket started!");
 
-
-
     // 网页处理
     server_OTA.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
                   { request->send_P(200, "text/html", index_html, processor); });
@@ -355,10 +373,8 @@ void setup() {
 
 //output wifi_sussce html;
     request->send_P(200, "text/html", wifi_sussce_html); });
-                  
+               
     server_OTA.onNotFound(notFound); // 404 page seems not necessary...
-
-
 
     AsyncElegantOTA.begin(&server_OTA); // Start ElegantOTA
 
@@ -381,6 +397,5 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
            webSocket.loop(); //处理websocketmie
-
 
 }

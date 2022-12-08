@@ -37,7 +37,9 @@ void TaskEnvData(void *pvParameters)
     {
         // Wait for the next cycle (intervel 750ms).
         vTaskDelayUntil(&xLastWakeTime, xIntervel);
-
+         Serial_debug.println("get env data serivce started");
+         WebSerial.println("get env data serivce started");
+         
         // Perform task actions from here
         // Read BT from MAX6675 thermal couple
         if (xSemaphoreTake(xTaskEnvDataMutex, xIntervel) == pdPASS)
