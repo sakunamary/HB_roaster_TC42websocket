@@ -159,7 +159,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
             root["id"] = ln_id;
             data["BT"] = To_artisan.bt;
             data["ET"] = To_artisan.et;
-            data["Exhaust"] = To_artisan.Exhaust;
+            data["Inlet"] = To_artisan.Inlet;
             data["AT"] = To_artisan.AT;
         }
 
