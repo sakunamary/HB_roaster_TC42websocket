@@ -121,7 +121,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
         else if (command == "getExhaust")
         {
             root["id"] = ln_id;
-            data["Exh"] = To_artisan.Exhaust;
+            data["Exhaust"] = To_artisan.Exhaust;
             
         }
         else if (command == "getInlet")
@@ -136,12 +136,30 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
             data["AT"] = To_artisan.AT;
             // Serial_debug.printf("getET created ET: %4.2f \n",cmd_M1.TC2);
         }
+        else if (command == "getTemp")
+        {
+            root["id"] = ln_id;
+            data["AT"] = To_artisan.temp_env;
+            // Serial_debug.printf("getET created ET: %4.2f \n",cmd_M1.TC2);
+        }
+        else if (command == "getHumi")
+        {
+            root["id"] = ln_id;
+            data["AT"] = To_artisan.humi_env;
+            // Serial_debug.printf("getET created ET: %4.2f \n",cmd_M1.TC2);
+        }
+        else if (command == "getAmp")
+        {
+            root["id"] = ln_id;
+            data["AT"] = To_artisan.amp_env;
+            // Serial_debug.printf("getET created ET: %4.2f \n",cmd_M1.TC2);
+        }
         else if (command == "getData")
         {
             root["id"] = ln_id;
             data["BT"] = To_artisan.bt;
             data["ET"] = To_artisan.et;
-            data["Exh"] = To_artisan.Exhaust;
+            data["Exhaust"] = To_artisan.Exhaust;
             data["AT"] = To_artisan.AT;
         }
 
