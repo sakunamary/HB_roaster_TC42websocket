@@ -83,7 +83,7 @@ const char index_html[] PROGMEM = R"rawliteral(
             提示:输入空白即恢复AP模式直链模式
             </p>
             <br/>
-            <button type='submit'>SAVE WIFI INFO </button>
+            <button type='submit'>SAVE</button>
         </form>     
             <p>
             <a href='/update' target='_blank'>FIRMWARE UPDATE verison:%version%</a>
