@@ -29,7 +29,13 @@
 
 #include "DFRobot_AHT20.h"
 #include <Adafruit_BMP085.h>
+//Ticker to execute actions at defined intervals
+//#include "TickTwo.h" //ESP8266 compatible version of Ticker by sstaub
+
+//drumer 命令串字符处理分割
 #include <StringTokenizer.h>
+
+
 
 String local_IP;
 
@@ -42,12 +48,20 @@ AsyncWebServer server_OTA(80);
 WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
 user_wifi_t user_wifi = {" ", " "};
 
+DFRobot_AHT20 aht20;//构建aht20 类
+Adafruit_BMP085 bmp;//构建BMP180 类
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length);
 String IpAddressToString(const IPAddress &ipAddress);                         //转换IP地址格式
 void recvMsg(uint8_t *data, size_t len);
 String processor(const String &var);
 void notFound(AsyncWebServerRequest *request);  
+
+
+
+
+SemaphoreHandle_t xTaskEnvDataMutex = NULL;
+
 
 
 
@@ -178,6 +192,12 @@ if (var == "version")
     return String();
 }
 
+
+
+
+
+
+
 /* Message callback of WebSerial */
 void recvMsg(uint8_t *data, size_t len){
   WebSerial.println("Received Data...");
@@ -192,6 +212,43 @@ void notFound(AsyncWebServerRequest *request)
 {
     request->send(404, "text/plain", "Opps....Not found");
 }
+
+
+
+void TaskSerialHandle(void *pvParameters)
+{
+
+ /* Variable Definition */
+    (void)pvParameters;
+    TickType_t xLastWakeTime;
+
+    const TickType_t xIntervel = ( 2* 1000 * 1000) / portTICK_PERIOD_MS; //1分钟更新一次
+   /* Task Setup and Initialize */
+    // Initial the xLastWakeTime variable with the current time.
+    xLastWakeTime = xTaskGetTickCount();
+
+    for (;;) // A Task shall never return or exit.
+    {
+        // Wait for the next cycle (intervel 750ms).
+        vTaskDelayUntil(&xLastWakeTime, xIntervel);
+
+        // Perform task actions from here
+        // Read BT from MAX6675 thermal couple
+        if (xSemaphoreTake(xTaskEnvDataMutex, xIntervel) == pdPASS)
+        {
+           //fasong
+
+
+        }
+            xSemaphoreGive(xThermoDataMutex);
+           webSocket.loop(); //处理websocketmie
+        
+    }
+}
+
+
+
+
 
 
 
@@ -289,5 +346,4 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
-  webSocket.loop(); //处理websocketmie
 }
