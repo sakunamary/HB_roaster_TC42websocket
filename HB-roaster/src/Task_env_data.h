@@ -5,11 +5,20 @@
 #include <Wire.h>
 #include "config.h"
 
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncElegantOTA.h>
+#include "WebSerial.h"
+#include "WebSerial.h"
+
 
 SemaphoreHandle_t xTaskEnvDataMutex = NULL;
 
 DFRobot_AHT20 aht20;//构建aht20 类
 Adafruit_BMP085 bmp;//构建BMP180 类
+
+HardwareSerial Serial_debug(0);       //debug
 
 
 void TaskEnvData(void *pvParameters)
@@ -43,18 +52,21 @@ void TaskEnvData(void *pvParameters)
                     
                 To_artisan.amp_env = float(bmp.readPressure()/100);
 
-                //debug serial
-                #if defined DEBUG_MODE
+        }
+
+            xSemaphoreGive(xTaskEnvDataMutex);
+
                 Serial_debug.print( To_artisan.temp_env, 2);
                 Serial_debug.print("\t\t");
                 Serial_debug.print(To_artisan.humi_env , 2);
                 Serial_debug.print("\t\t");
                 Serial_debug.println(To_artisan.amp_env,2);
-                #endif  
-                //debug serial
-        }
 
-            xSemaphoreGive(xThermoDataMutex);
+                WebSerial.print( To_artisan.temp_env);
+                WebSerial.print("\t\t");
+                WebSerial.print(To_artisan.humi_env );
+                WebSerial.print("\t\t");
+                WebSerial.println(To_artisan.amp_env);
     }
 
 }

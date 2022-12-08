@@ -30,40 +30,32 @@
 #include "DFRobot_AHT20.h"
 #include <Adafruit_BMP085.h>
 //Ticker to execute actions at defined intervals
-#include "TickTwo.h" //ESP8266 compatible version of Ticker by sstaub
+//#include "TickTwo.h" //ESP8266 compatible version of Ticker by sstaub
 
 //drumer 命令串字符处理分割
 #include <StringTokenizer.h>
 
+
+#include "Task_env_data.h"
 
 
 String local_IP;
 
 //串口初始化
 HardwareSerial Serial_with_drumer(1); //获取数据
-HardwareSerial Serial_debug(0);       //debug
+//HardwareSerial Serial_debug(0);       //debug
 
 // object declare
 AsyncWebServer server_OTA(80);
 WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
 user_wifi_t user_wifi = {" ", " "};
 
-DFRobot_AHT20 aht20;//构建aht20 类
-Adafruit_BMP085 bmp;//构建BMP180 类
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length);
 String IpAddressToString(const IPAddress &ipAddress);                         //转换IP地址格式
 void recvMsg(uint8_t *data, size_t len);
 String processor(const String &var);
 void notFound(AsyncWebServerRequest *request);  
-
-
-
-
-SemaphoreHandle_t xTaskEnvDataMutex = NULL;
-
-
-
 
 
 
@@ -226,7 +218,7 @@ void notFound(AsyncWebServerRequest *request)
 
 void setup() {
   // put your setup code here, to run once:
-   xThermoDataMutex = xSemaphoreCreateMutex();
+   xTaskEnvDataMutex = xSemaphoreCreateMutex();
 
 
  Serial_debug.begin(BAUDRATE);
@@ -234,6 +226,7 @@ void setup() {
  Serial_debug.printf("\nHB Roaster is  STARTING...\n");
  WebSerial.begin(&server_OTA);
  WebSerial.msgCallback(recvMsg);
+ WebSerial.println("\nHB Roaster is  STARTING...\n");
 
 
    // 读取EEPROM 数据
@@ -342,9 +335,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-
            webSocket.loop(); //处理websocketmie
-
 
 
 
