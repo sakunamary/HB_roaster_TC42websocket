@@ -36,7 +36,4 @@ extern user_wifi_t  user_wifi ;
 
 
 
-
-
-
 #endif       
