@@ -220,7 +220,7 @@ WebSerial.println("sended CHAN;1300 command");
 
 //Serial_with_drumer.flush();
 
-delay(100) ;
+////delay(100) ;
 
 Serial_with_drumer.print("READ;\r\n");
 WebSerial.println("sended READ command");
@@ -259,7 +259,7 @@ Serial_with_drumer.print("CHAN;2400\r\n");
 WebSerial.println("sended CHAN;2400 command");
 //Serial_with_drumer.flush();
 
-delay(100) ;
+//delay(100) ;
 
 Serial_with_drumer.print("READ;\r\n");
 WebSerial.println("sended READ command");
