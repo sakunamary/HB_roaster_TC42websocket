@@ -218,6 +218,10 @@ int loop_i=1;
 Serial_with_drumer.print("CHAN;1300\r\n");
 WebSerial.println("sended CHAN;1300 command");
 
+Serial_with_drumer.flush();
+
+delay(100) ;
+
 Serial_with_drumer.print("READ;\r\n");
 WebSerial.println("sended READ command");
 
@@ -237,18 +241,25 @@ if  (Serial_with_drumer.available()>0)
     #endif 
 
   StringTokenizer tokens_1300(msg_raw, ",");
-  while(tokens.hasNext()){
-          if (loop_i == 1) { To_artisan.bt = tokens.nextToken().toDouble();      loop_i++;}
-          else if (loop_i == 2) {To_artisan.et = tokens.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 3) {To_artisan.Exhaust = tokens.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 4) {To_artisan.Inlet = tokens.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 5) {To_artisan.AT = tokens.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 6) {To_artisan.Null_data = tokens.nextToken().toDouble(); loop_i = 1 ; }
+  while(tokens_1300.hasNext()){
+          if (loop_i == 1) { To_artisan.bt = tokens_1300.nextToken().toDouble();      loop_i++;}
+          else if (loop_i == 2) {To_artisan.et = tokens_1300.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 3) {To_artisan.Exhaust = tokens_1300.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 4) {To_artisan.Inlet = tokens_1300.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 5) {To_artisan.AT = tokens_1300.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 6) {To_artisan.Null_data = tokens_1300.nextToken().toDouble(); loop_i = 1 ; }
    }
 
    }
+
+Serial_with_drumer.flush();
+
+
 Serial_with_drumer.print("CHAN;2400\r\n");
-WebSerial.println("sended CHAN;1300 command");
+WebSerial.println("sended CHAN;2400 command");
+Serial_with_drumer.flush();
+
+delay(100) ;
 
 Serial_with_drumer.print("READ;\r\n");
 WebSerial.println("sended READ command");
@@ -268,17 +279,18 @@ if  (Serial_with_drumer.available()>0)
     #endif 
 
   StringTokenizer tokens_2400(msg_raw, ",");
-  while(tokens.hasNext()){
-          if (loop_i == 1) { To_artisan.bt = tokens.nextToken().toDouble();      loop_i++;}
-          else if (loop_i == 2) {To_artisan.et = tokens.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 3) {To_artisan.Exhaust = tokens.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 4) {To_artisan.Inlet = tokens.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 5) {To_artisan.AT = tokens.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 6) {To_artisan.Null_data = tokens.nextToken().toDouble(); loop_i = 1 ; }
+  while(tokens_2400.hasNext()){
+          if (loop_i == 1) { To_artisan.bt = tokens_2400.nextToken().toDouble();      loop_i++;}
+          else if (loop_i == 2) {To_artisan.et = tokens_2400.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 3) {To_artisan.Exhaust = tokens_2400.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 4) {To_artisan.Inlet = tokens_2400.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 5) {To_artisan.AT = tokens_2400.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 6) {To_artisan.Null_data = tokens_2400.nextToken().toDouble(); loop_i = 1 ; }
    }
 
    }
 
+Serial_with_drumer.flush();
 
 }  //完成一次读取和处理数据
 
