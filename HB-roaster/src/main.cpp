@@ -41,7 +41,7 @@
 String local_IP;
 
 //串口初始化
-HardwareSerial Serial_with_drumer(1); //获取数据
+HardwareSerial Serial_with_drumer(2); //获取数据
 //HardwareSerial Serial_debug(0);       //debug
 
 // object declare
@@ -215,10 +215,13 @@ void ReadData_from_drumer(void) {
 String msg_raw;
 int loop_i=1; 
 
-Serial_with_drumer.print("READ\n");
+Serial_with_drumer.print("CHAN;1300\r\n");
+WebSerial.println("sended CHAN;1300 command");
+
+Serial_with_drumer.print("READ;\r\n");
 WebSerial.println("sended READ command");
 
-delay(500);
+//delay(500);
 
 //读取串口数据
 if  (Serial_with_drumer.available()>0)
@@ -233,7 +236,7 @@ if  (Serial_with_drumer.available()>0)
 
     #endif 
 
-  StringTokenizer tokens(msg_raw, ",");
+  StringTokenizer tokens_1300(msg_raw, ",");
   while(tokens.hasNext()){
           if (loop_i == 1) { To_artisan.bt = tokens.nextToken().toDouble();      loop_i++;}
           else if (loop_i == 2) {To_artisan.et = tokens.nextToken().toDouble();  loop_i++;}
@@ -244,6 +247,39 @@ if  (Serial_with_drumer.available()>0)
    }
 
    }
+Serial_with_drumer.print("CHAN;2400\r\n");
+WebSerial.println("sended CHAN;1300 command");
+
+Serial_with_drumer.print("READ;\r\n");
+WebSerial.println("sended READ command");
+
+
+//读取串口数据
+if  (Serial_with_drumer.available()>0)
+{
+    msg_raw = Serial_with_drumer.readStringUntil('\n'); //读取数据
+
+    #if defined DEBUG_MODE
+        Serial_debug.println("read from drummer raw :");
+        Serial_debug.println(msg_raw); 
+        WebSerial.println("read from drummer raw :");
+        WebSerial.println(msg_raw); 
+
+    #endif 
+
+  StringTokenizer tokens_2400(msg_raw, ",");
+  while(tokens.hasNext()){
+          if (loop_i == 1) { To_artisan.bt = tokens.nextToken().toDouble();      loop_i++;}
+          else if (loop_i == 2) {To_artisan.et = tokens.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 3) {To_artisan.Exhaust = tokens.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 4) {To_artisan.Inlet = tokens.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 5) {To_artisan.AT = tokens.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 6) {To_artisan.Null_data = tokens.nextToken().toDouble(); loop_i = 1 ; }
+   }
+
+   }
+
+
 }  //完成一次读取和处理数据
 
 /* Message callback of WebSerial */
@@ -316,10 +352,14 @@ void setup() {
 
  Serial_debug.begin(BAUDRATE);
  Serial_with_drumer.begin(BAUDRATE);
+ Serial_with_drumer.setRxTimeout(30);
+
  Serial_debug.printf("\nHB Roaster is  STARTING...\n");
+
+
  WebSerial.begin(&server_OTA);
  WebSerial.msgCallback(recvMsg);
-
+ Serial_debug.printf("\nHB Roaster webserial started\n");
 
    // 读取EEPROM 数据
     EEPROM.begin(sizeof(user_wifi));
@@ -361,7 +401,7 @@ void setup() {
         }
         // show AP's IP
     }
-    Serial_debug.print("TC4-WB's IP:");
+    Serial_debug.print("HB_ROASTER's IP:");
 
 
     if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
