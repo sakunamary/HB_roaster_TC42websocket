@@ -218,7 +218,7 @@ int loop_i=1;
 Serial_with_drumer.print("CHAN;1300\r\n");
 WebSerial.println("sended CHAN;1300 command");
 
-Serial_with_drumer.flush();
+//Serial_with_drumer.flush();
 
 delay(100) ;
 
@@ -257,7 +257,7 @@ Serial_with_drumer.flush();
 
 Serial_with_drumer.print("CHAN;2400\r\n");
 WebSerial.println("sended CHAN;2400 command");
-Serial_with_drumer.flush();
+//Serial_with_drumer.flush();
 
 delay(100) ;
 
@@ -363,8 +363,11 @@ void setup() {
 
 
  Serial_debug.begin(BAUDRATE);
+ //Serial_with_drumer.begin(BAUDRATE);
+
+ //void HardwareSerial::begin(unsigned long baud, uint32_t config=SERIAL_8N1, int8_t rxPin=-1, int8_t txPin=-1, bool invert=false, unsigned long timeout_ms = 20000UL);
  Serial_with_drumer.begin(BAUDRATE);
- Serial_with_drumer.setRxTimeout(30);
+ //Serial_with_drumer.setRxTimeout(30);
 
  Serial_debug.printf("\nHB Roaster is  STARTING...\n");
 

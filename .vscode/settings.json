@@ -16,6 +16,9 @@
         "string_view": "cpp",
         "unordered_map": "cpp",
         "vector": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "algorithm": "cpp",
+        "functional": "cpp",
+        "locale": "cpp"
     }
 }
