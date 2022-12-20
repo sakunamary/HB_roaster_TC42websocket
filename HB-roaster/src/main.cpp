@@ -9,6 +9,9 @@
 6:webserial数据输出
 */
 
+//https://www.hobbytronics.co.uk/usb-host-serial
+
+
 #include <Arduino.h>
 
 #include "config.h"
@@ -215,39 +218,39 @@ void ReadData_from_drumer(void) {
 String msg_raw;
 int loop_i=1; 
 
-Serial_with_drumer.print("CHAN;1300\r\n");
+Serial_with_drumer.print("CHAN;1300\n");
 WebSerial.println("sended CHAN;1300 command");
 
-//Serial_with_drumer.flush();
+Serial_with_drumer.flush();
 
-////delay(100) ;
+delay(200) ;
 
-Serial_with_drumer.print("READ;\r\n");
+Serial_with_drumer.print("READ\n");
 WebSerial.println("sended READ command");
 
-//delay(500);
+delay(200);
 
 //读取串口数据
 if  (Serial_with_drumer.available()>0)
 {
     msg_raw = Serial_with_drumer.readStringUntil('\n'); //读取数据
 
-    #if defined DEBUG_MODE
+
         Serial_debug.println("read from drummer raw :");
         Serial_debug.println(msg_raw); 
         WebSerial.println("read from drummer raw :");
         WebSerial.println(msg_raw); 
 
-    #endif 
+
 
   StringTokenizer tokens_1300(msg_raw, ",");
   while(tokens_1300.hasNext()){
-          if (loop_i == 1) { To_artisan.bt = tokens_1300.nextToken().toDouble();      loop_i++;}
+          if (loop_i == 1) { To_artisan.AT = tokens_1300.nextToken().toDouble();      loop_i++;}
           else if (loop_i == 2) {To_artisan.et = tokens_1300.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 3) {To_artisan.Exhaust = tokens_1300.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 4) {To_artisan.Inlet = tokens_1300.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 5) {To_artisan.AT = tokens_1300.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 6) {To_artisan.Null_data = tokens_1300.nextToken().toDouble(); loop_i = 1 ; }
+          else if (loop_i == 3) {To_artisan.bt = tokens_1300.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 4) { loop_i++;}
+          else if (loop_i == 5) { loop_i++;}
+          else if (loop_i == 6) {loop_i = 1 ; }
    }
 
    }
@@ -255,13 +258,13 @@ if  (Serial_with_drumer.available()>0)
 Serial_with_drumer.flush();
 
 
-Serial_with_drumer.print("CHAN;2400\r\n");
+Serial_with_drumer.print("CHAN;2400\n");
 WebSerial.println("sended CHAN;2400 command");
 //Serial_with_drumer.flush();
 
 //delay(100) ;
 
-Serial_with_drumer.print("READ;\r\n");
+Serial_with_drumer.print("READ\n");
 WebSerial.println("sended READ command");
 
 
@@ -270,22 +273,22 @@ if  (Serial_with_drumer.available()>0)
 {
     msg_raw = Serial_with_drumer.readStringUntil('\n'); //读取数据
 
-    #if defined DEBUG_MODE
+
         Serial_debug.println("read from drummer raw :");
         Serial_debug.println(msg_raw); 
         WebSerial.println("read from drummer raw :");
         WebSerial.println(msg_raw); 
 
-    #endif 
+
 
   StringTokenizer tokens_2400(msg_raw, ",");
   while(tokens_2400.hasNext()){
-          if (loop_i == 1) { To_artisan.bt = tokens_2400.nextToken().toDouble();      loop_i++;}
-          else if (loop_i == 2) {To_artisan.et = tokens_2400.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 3) {To_artisan.Exhaust = tokens_2400.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 4) {To_artisan.Inlet = tokens_2400.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 5) {To_artisan.AT = tokens_2400.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 6) {To_artisan.Null_data = tokens_2400.nextToken().toDouble(); loop_i = 1 ; }
+          if (loop_i == 1) {   loop_i++;}
+          else if (loop_i == 2) {To_artisan.Exhaust= tokens_2400.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 3) {To_artisan.Inlet  = tokens_2400.nextToken().toDouble();  loop_i++;}
+          else if (loop_i == 4) { loop_i++;}
+          else if (loop_i == 5) { loop_i++;}
+          else if (loop_i == 6) {loop_i = 1 ; }
    }
 
    }
@@ -363,11 +366,11 @@ void setup() {
 
 
  Serial_debug.begin(BAUDRATE);
- //Serial_with_drumer.begin(BAUDRATE);
 
+// ESP32 UART2  RX =GPIO16 	TX=GPIO17
  //void HardwareSerial::begin(unsigned long baud, uint32_t config=SERIAL_8N1, int8_t rxPin=-1, int8_t txPin=-1, bool invert=false, unsigned long timeout_ms = 20000UL);
- Serial_with_drumer.begin(BAUDRATE);
- //Serial_with_drumer.setRxTimeout(30);
+ Serial_with_drumer.begin(BAUDRATE,SERIAL_8N1,16,17);
+ Serial_with_drumer.setRxTimeout(30);
 
  Serial_debug.printf("\nHB Roaster is  STARTING...\n");
 
@@ -475,5 +478,7 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
            webSocket.loop(); //处理websocketmie
-
+    WebSerial.print("Uart2 is :");
+    WebSerial.println(Serial_with_drumer.available());
+    delay(1000);
 }
