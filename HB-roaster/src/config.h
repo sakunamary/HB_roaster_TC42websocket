@@ -4,7 +4,7 @@
 
 
 #define BAUDRATE 115200  //serial port baudrate
-#define VERSION "1.0.1"
+#define VERSION "1.0.3"
 
 #define DEBUG_MODE
 
