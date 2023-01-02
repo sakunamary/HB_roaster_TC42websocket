@@ -58,9 +58,9 @@ String IpAddressToString(const IPAddress &ipAddress);                         //
 void recvMsg(uint8_t *data, size_t len);
 String processor(const String &var);
 void notFound(AsyncWebServerRequest *request);  
-void ReadData_from_drumer();//读取 锅炉的数值 指令  750ms 运行一次 。剥离数据后写入cmd_M1 和 To_artisan  
+void ReadData_from_drumer(void);//读取 锅炉的数值 指令  750ms 运行一次 。剥离数据后写入cmd_M1 和 To_artisan  
 
-
+char serial_buffer[64];
 
 
 // Define Artisan Websocket events to exchange data
@@ -216,8 +216,9 @@ if (var == "version")
 
 void ReadData_from_drumer(void) {
 String msg_raw;
+//String cmd = "";
 //int loop_i=1; 
-
+/*
 Serial_with_drumer.print("CHAN,1300\r\n");
 WebSerial.println("ReadData from drumer () sended CHAN;1300 command");
 WebSerial.println(Serial_with_drumer.available());
@@ -234,19 +235,26 @@ if  (Serial_with_drumer.available()>0)
         WebSerial.println(msg_raw); 
 
 }
-
-
-Serial_with_drumer.print("READ\n");
+*/
+Serial_with_drumer.print('READ\n');
 WebSerial.println("ReadData from drumer () sended READ command");
+//Serial_with_drumer.flush();
+
+delay(150);
 WebSerial.println(Serial_with_drumer.available());
 //读取串口数据
+
+
 if  (Serial_with_drumer.available()>0)
 {
+     /*
+for(int i=0; i < Serial_with_drumer.available(); i++){
+    cmd += char(serial_buffer[i]);
+  }
+*/
     msg_raw = Serial_with_drumer.readStringUntil('\n'); //读取数据
+    //mag_raw = Serial_with_drumer.read();
 
-
-        Serial_debug.println("read from drummer raw :");
-        Serial_debug.println(msg_raw); 
         WebSerial.println("read from drummer raw :");
         WebSerial.println(msg_raw); 
 
@@ -257,53 +265,10 @@ if  (Serial_with_drumer.available()>0)
           if (loop_i == 1) { To_artisan.AT = tokens_1300.nextToken().toDouble();      loop_i++;}
           else if (loop_i == 2) {To_artisan.et = tokens_1300.nextToken().toDouble();  loop_i++;}
           else if (loop_i == 3) {To_artisan.bt = tokens_1300.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 4) { loop_i++;}
-          else if (loop_i == 5) { loop_i++;}
-          else if (loop_i == 6) {loop_i = 1 ; }
-   }
+          else if (loop_i == 4) { loop_i = 1 ;}
+  
 */
-   }
-
-//Serial_with_drumer.flush();
-
-/*
-Serial_with_drumer.print("CHAN;2400\n");
-WebSerial.println("sended CHAN;2400 command");
-//Serial_with_drumer.flush();
-
-//delay(100) ;
-
-Serial_with_drumer.print("READ\n");
-WebSerial.println("sended READ command");
-
-
-//读取串口数据
-if  (Serial_with_drumer.available()>0)
-{
-    msg_raw = Serial_with_drumer.readStringUntil('\n'); //读取数据
-
-
-        Serial_debug.println("read from drummer raw :");
-        Serial_debug.println(msg_raw); 
-        WebSerial.println("read from drummer raw :");
-        WebSerial.println(msg_raw); 
-
-
-
-  StringTokenizer tokens_2400(msg_raw, ",");
-  while(tokens_2400.hasNext()){
-          if (loop_i == 1) {   loop_i++;}
-          else if (loop_i == 2) {To_artisan.Exhaust= tokens_2400.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 3) {To_artisan.Inlet  = tokens_2400.nextToken().toDouble();  loop_i++;}
-          else if (loop_i == 4) { loop_i++;}
-          else if (loop_i == 5) { loop_i++;}
-          else if (loop_i == 6) {loop_i = 1 ; }
-   }
-
-   }
-
-Serial_with_drumer.flush();
-*/
+    }
 }  //完成一次读取和处理数据
 
 /* Message callback of WebSerial */
@@ -378,7 +343,9 @@ void setup() {
 
 // ESP32 UART2  RX =GPIO16 	TX=GPIO17
  //void HardwareSerial::begin(unsigned long baud, uint32_t config=SERIAL_8N1, int8_t rxPin=-1, int8_t txPin=-1, bool invert=false, unsigned long timeout_ms = 20000UL);
- Serial_with_drumer.begin(BAUDRATE);
+  Serial_with_drumer.begin(BAUDRATE);
+ 
+ //Serial_with_drumer.begin(BAUDRATE,SERIAL_8N1,16,17,false);
  //Serial_with_drumer.setRxTimeout(30);
 
  Serial_debug.printf("\nHB Roaster is  STARTING...\n");
