@@ -25,6 +25,7 @@ class Communication():
         print("name:",self.main_engine.name) #设备名字
         print("port:",self.main_engine.port)#读或者写端口
         print("baudrate:",self.main_engine.baudrate)#波特率
+        .
         print("bytesize:",self.main_engine.bytesize)#字节大小
         print("parity:",self.main_engine.parity)#校验位
         print("stopbits:",self.main_engine.stopbits)#停止位
