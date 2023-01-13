@@ -22,8 +22,8 @@ serial_port = serial.Serial(serial_port,buadrate,8,'N',1,timeout=0.5)
 
 #构建 json 的dict类
 class Data_JSON(object):
-    def __init__(self,ID,BT,ET) :
-        self.ID = ID
+    def __init__(self,id,BT,ET) :
+        self.id = id
         self.BT = BT
         self.ET = ET 
 
@@ -65,7 +65,7 @@ def get_tempeture(id_in):
         command = 'CHAN;1300\n'
         serial_port.write(str2cmd(command))
         serial_port.flush()
-        time.sleep(0.1)
+       # time.sleep(0.1)
         RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2]
         # if (rl.startswith('#')):
         #     print("CHAN 1300:",rl)
@@ -84,7 +84,7 @@ def get_tempeture(id_in):
         command = 'CHAN;2400\n'
         serial_port.write(str2cmd(command))
         serial_port.flush()
-        time.sleep(0.1)
+       # time.sleep(0.1)
         RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2]
         # if (rl.startswith('#')):
         #     print("CHAN 2400:",rl)
