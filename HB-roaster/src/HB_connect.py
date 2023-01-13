@@ -21,6 +21,11 @@ buadrate = 57600
 serial_port = serial.Serial(serial_port,buadrate,8,'N',1,timeout=0.5)
 
 #构建 json 的dict类
+class Data_JSON(object):
+    def __init__(self,ID,BT,ET) :
+        self.ID = ID
+        self.BT = BT
+        self.ET = ET 
 
 
 
@@ -31,10 +36,6 @@ def str2cmd(s):
 
 # 获取本机IP地址
 def get_host_ip():
-    """
-    查询本机ip地址
-    :return: ip
-    """
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(('8.8.8.8', 80))
@@ -43,10 +44,13 @@ def get_host_ip():
         s.close()
         return ip
 
-def get_tempeture():
+
+# 获取温度并用JSON序列化
+def get_tempeture(id_in):
     RESULT_LINE = ''
     res1300 = ''
     res2400 = ''
+    JSON_ID = id_in
     bt = 0.0
     ET = 0.0
     drum = 0.0
@@ -61,14 +65,14 @@ def get_tempeture():
         command = 'CHAN;1300\n'
         serial_port.write(str2cmd(command))
         serial_port.flush()
-        time.sleep(0.3)
+        time.sleep(0.1)
         RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2]
         # if (rl.startswith('#')):
         #     print("CHAN 1300:",rl)
 
         command = 'READ\n'
         serial_port.write(str2cmd(command))
-        time.sleep(0.2)
+        time.sleep(0.1)
         serial_port.flush()
         RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2]
         if (not len(RESULT_LINE) == 0 and not RESULT_LINE.startswith('#')):
@@ -80,14 +84,14 @@ def get_tempeture():
         command = 'CHAN;2400\n'
         serial_port.write(str2cmd(command))
         serial_port.flush()
-        time.sleep(0.3)
+        time.sleep(0.1)
         RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2]
         # if (rl.startswith('#')):
         #     print("CHAN 2400:",rl)
 
         command = 'READ\n'
         serial_port.write(str2cmd(command))
-        time.sleep(0.2)
+        time.sleep(0.1)
         serial_port.flush()
         RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2]
         if (not len(RESULT_LINE) == 0 and not RESULT_LINE.startswith('#')):
@@ -96,7 +100,10 @@ def get_tempeture():
             ET = float(res2400[0])
             drum =float(res2400[1])
 
-        send_back = json.dumps
+
+
+        p = Data_JSON(JSON_ID,bt,ET,)             
+        send_back = json.dumps(p.__dict__)
         return send_back              
         
         # print("BT:",bt,"ET:",bt,"AIR:",Air,"DURM:",drum)
@@ -107,9 +114,10 @@ async def handler(websocket, path):
         message = await websocket.recv()
         data = json.loads(message)  #  {"command": "getData", "id": 35632, "roasterID": 0}
         if data['command'] == 'getData':
-            #print(data['command'])
-            get_tempeture() # 获取一次温度数据
-            send_back_json = get_tempeture()
+           # print(data['command'])
+           # get_tempeture(data['id']) # 获取一次温度数据
+            send_back_json = get_tempeture(data['id'])
+            
         print(message)
         print(send_back_json)
  
@@ -123,7 +131,7 @@ async def main():
 
 
 #主程序
-print(get_host_ip()) #显示本机IP地址
+# print(get_host_ip()) #显示本机IP地址
 
 asyncio.run(main())
 
