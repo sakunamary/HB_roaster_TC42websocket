@@ -11,9 +11,9 @@ import time,serial,json,socket
 import websockets
 
 #全局变量定义
-# port ='/dev/ttyAMA0'
+serial_port ='/dev/ttyACM0'
 # serial_port = '/dev/cu.usbmodem00001'
-serial_port = '/dev/cu.usbserial-14310'
+# serial_port = '/dev/cu.usbserial-14310'
 buadrate = 57600
 
 #对象声明
@@ -112,14 +112,15 @@ def get_tempeture(id_in):
 async def handler(websocket, path):
     while True:
         message = await websocket.recv()
-        data = json.loads(message)  #  {"command": "getData", "id": 35632, "roasterID": 0}
+        data = json.loads(message)  #  {"command": "getData", "id": 35632, "roasterID": 0}  # {"data":{"BT":24.875,"ET":23.25},"id":35632}
         if data['command'] == 'getData':
            # print(data['command'])
            # get_tempeture(data['id']) # 获取一次温度数据
-            send_back_json = get_tempeture(data['id'])
-            
+
+            send_back_json = get_tempeture(data['id']) 
         print(message)
         print(send_back_json)
+        await websocket.send(send_back_json)
  
 async def main():
     async with websockets.serve(handler, "", 8080):
@@ -131,7 +132,7 @@ async def main():
 
 
 #主程序
-# print(get_host_ip()) #显示本机IP地址
+print(get_host_ip()) #显示本机IP地址
 
 asyncio.run(main())
 
