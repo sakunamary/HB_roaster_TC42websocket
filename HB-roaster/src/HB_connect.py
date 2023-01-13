@@ -22,9 +22,10 @@ serial_port = serial.Serial(serial_port,buadrate,8,'N',1,timeout=0.5)
 
 #构建 json 的dict类
 class Data_JSON(object):
-    def __init__(self,BT,ET) :
+    def __init__(self,BT,ET,AT) :
         self.BT = BT
         self.ET = ET 
+        self.AT = AT
 
 
 
@@ -45,14 +46,14 @@ def get_host_ip():
 
 
 # 获取温度并用JSON序列化
-def get_tempeture(id_in):
+def get_tempeture():
     RESULT_LINE = ''
     res1300 = ''
     res2400 = ''
-    JSON_ID = id_in
-    bt = 0.0
+    AT = 0.0
+    BT = 0.0
     ET = 0.0
-    drum = 0.0
+    Inlet = 0.0
     Air  = 0.0
     command = ''
     port_ok_flag = serial_port.isOpen()
@@ -77,8 +78,9 @@ def get_tempeture(id_in):
         if (not len(RESULT_LINE) == 0 and not RESULT_LINE.startswith('#')):
             # print("READ 1300:",rl)
             res1300 = RESULT_LINE.rsplit(',')
-            bt = float(res1300[0])
-            Air =float(res1300[1])
+            AT = float(res1300[0])
+            ET = float(res1300[1])
+            BT = float(res1300[2])
 
         command = 'CHAN;2400\n'
         serial_port.write(str2cmd(command))
@@ -96,29 +98,30 @@ def get_tempeture(id_in):
         if (not len(RESULT_LINE) == 0 and not RESULT_LINE.startswith('#')):
             # print("READ 2400: ",rl)
             res2400 = RESULT_LINE.rsplit(',')
-            ET = float(res2400[0])
+            Inlet = float(res2400[0])
             drum =float(res2400[1])
 
 
 
-        p = Data_JSON(bt,ET,)             
+        p = Data_JSON(BT,ET,AT)
         send_back = json.dumps(p.__dict__)
-        return send_back              
-        
-        # print("BT:",bt,"ET:",bt,"AIR:",Air,"DURM:",drum)
+        return send_back
 
 
 async def handler(websocket, path):
     while True:
         message = await websocket.recv()
-        data = json.loads(message)  #  {"command": "getData", "id": 35632, "roasterID": 0}  # {"data":{"BT":24.875,"ET":23.25},"id":35632}
+        data = json.loads(message)
+        # {"command": "getData", "id": 35632, "roasterID": 0}
+        # {"data":{"BT":24.875,"ET":23.25},"id":35632}
+        
         if data['command'] == 'getData':
            # print(data['command'])
            # get_tempeture(data['id']) # 获取一次温度数据
 
-            send_back_json = '{"data":'+ get_tempeture(data['id']) +',"id":'+ data['id'] + '}'
-        print(message)
-        print(send_back_json)
+            send_back_json = '{"data":'+ get_tempeture() +',"id":'+ str(data['id']) + '}'
+        # print(message)
+        # print(send_back_json)
         await websocket.send(send_back_json)
  
 async def main():
