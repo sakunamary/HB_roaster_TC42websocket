@@ -22,8 +22,7 @@ serial_port = serial.Serial(serial_port,buadrate,8,'N',1,timeout=0.5)
 
 #构建 json 的dict类
 class Data_JSON(object):
-    def __init__(self,id,BT,ET) :
-        self.id = id
+    def __init__(self,BT,ET) :
         self.BT = BT
         self.ET = ET 
 
@@ -102,7 +101,7 @@ def get_tempeture(id_in):
 
 
 
-        p = Data_JSON(JSON_ID,bt,ET,)             
+        p = Data_JSON(bt,ET,)             
         send_back = json.dumps(p.__dict__)
         return send_back              
         
@@ -117,7 +116,7 @@ async def handler(websocket, path):
            # print(data['command'])
            # get_tempeture(data['id']) # 获取一次温度数据
 
-            send_back_json = get_tempeture(data['id']) 
+            send_back_json = '{"data":'+ get_tempeture(data['id']) +',"id":'+ data['id'] + '}'
         print(message)
         print(send_back_json)
         await websocket.send(send_back_json)
@@ -135,23 +134,3 @@ async def main():
 print(get_host_ip()) #显示本机IP地址
 
 asyncio.run(main())
-
-# async def counter(websocket, path):
-#     # register(websocket) sends user_event() to websocket
-#     await register(websocket)
-#     try:
-#         await websocket.send(state_event())
-#         async for message in websocket:
-#             data = json.loads(message)
-#             if data['action'] == 'minus':
-#                 STATE['value'] -= 1
-#                 await notify_state()
-#             elif data['action'] == 'plus':
-#                 STATE['value'] += 1
-#                 await notify_state()
-#             else:
-#                 logging.error(
-#                     "unsupported event: {}", data)
-#     finally:
-#         await unregister(websocket)
-# //更多请阅读：https://www.yiibai.com/websocket/python-websockets-library.html
