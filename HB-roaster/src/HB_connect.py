@@ -22,10 +22,11 @@ serial_port = serial.Serial(serial_port,buadrate,8,'N',1,timeout=0.5)
 
 #构建 json 的dict类
 class Data_JSON(object):
-    def __init__(self,BT,ET,AT) :
+    def __init__(self,BT,ET,AT,INLET) :
         self.BT = BT
         self.ET = ET 
         self.AT = AT
+        self.INLET = INLET
 
 
 
@@ -54,7 +55,6 @@ def get_tempeture():
     BT = 0.0
     ET = 0.0
     Inlet = 0.0
-    Air  = 0.0
     command = ''
     port_ok_flag = serial_port.isOpen()
     print("port is open:",port_ok_flag)
@@ -98,12 +98,11 @@ def get_tempeture():
         if (not len(RESULT_LINE) == 0 and not RESULT_LINE.startswith('#')):
             # print("READ 2400: ",rl)
             res2400 = RESULT_LINE.rsplit(',')
-            Inlet = float(res2400[0])
-            drum =float(res2400[1])
+            Inlet =float(res2400[1])
 
 
 
-        p = Data_JSON(BT,ET,AT)
+        p = Data_JSON(BT,ET,AT,Inlet)
         send_back = json.dumps(p.__dict__)
         return send_back
 
