@@ -3,31 +3,29 @@
 
 #库引用
 import asyncio
-
 import time,serial,json,socket
-# import websockets #pip3 install websockets
-# import  websockets
-# https://geek-docs.com/python/python-tutorial/python-simplejson.html
 import websockets
 
+
 #全局变量定义
-serial_port ='/dev/ttyACM0'
-# serial_port = '/dev/cu.usbmodem00001'
-# serial_port = '/dev/cu.usbserial-14310'
-buadrate = 57600
+#定义USB 接口，
+# serial_port ='/dev/ttyACM0'  # ls /dev/tty* 查询
+serial_port = '/dev/ttyUSB0'
+#定义buadrate
+buadrate = 115200
 
 #对象声明
 #声明串口
 serial_port = serial.Serial(serial_port,buadrate,8,'N',1,timeout=0.5)
 
-#构建 json 的dict类
+#定义Websocket 数据反写的dict 类 
 class Data_JSON(object):
-    def __init__(self,BT,ET,AT,INLET) :
+    def __init__(self,BT,ET,AT,INLET) : 
         self.BT = BT
         self.ET = ET 
         self.AT = AT
         self.INLET = INLET
-
+        #字段顺序可以自定义，如修改顺序artisan对应的设置顺序也要修改
 
 
 # 函数定义
@@ -56,17 +54,16 @@ def get_tempeture():
     ET = 0.0
     Inlet = 0.0
     command = ''
-    port_ok_flag = serial_port.isOpen()
-    print("port is open:",port_ok_flag)
+    # port_ok_flag = serial_port.isOpen()
+    # print("port is open:",port_ok_flag)
 
-    if (port_ok_flag) :
-                #print("port_ok_flag:",port_ok_flag)
+    if (serial_port.isOpen()) :
+        #print("port_ok_flag:",port_ok_flag)
 
         command = 'CHAN;1300\n'
         serial_port.write(str2cmd(command))
         serial_port.flush()
-       # time.sleep(0.1)
-        RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2]
+        RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2] # for debug using
         # if (rl.startswith('#')):
         #     print("CHAN 1300:",rl)
 
@@ -76,7 +73,7 @@ def get_tempeture():
         serial_port.flush()
         RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2]
         if (not len(RESULT_LINE) == 0 and not RESULT_LINE.startswith('#')):
-            # print("READ 1300:",rl)
+            # print("READ 1300:",RESULT_LINE)
             res1300 = RESULT_LINE.rsplit(',')
             AT = float(res1300[0])
             ET = float(res1300[1])
@@ -86,7 +83,7 @@ def get_tempeture():
         serial_port.write(str2cmd(command))
         serial_port.flush()
        # time.sleep(0.1)
-        RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2]
+        RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2] # for debug using
         # if (rl.startswith('#')):
         #     print("CHAN 2400:",rl)
 
@@ -101,14 +98,14 @@ def get_tempeture():
             Inlet =float(res2400[1])
 
 
-
+        # 打包数据成json格式
         p = Data_JSON(BT,ET,AT,Inlet)
         send_back = json.dumps(p.__dict__)
         return send_back
 
 
 async def handler(websocket, path):
-    while True:
+    if (True):
         message = await websocket.recv()
         data = json.loads(message)
         # {"command": "getData", "id": 35632, "roasterID": 0}
@@ -122,6 +119,10 @@ async def handler(websocket, path):
         # print(message)
         # print(send_back_json)
         await websocket.send(send_back_json)
+        else:
+            send_back_json = 'websokcet is closed'
+        await websocket.close()
+        
  
 async def main():
     async with websockets.serve(handler, "", 8080):
@@ -136,3 +137,4 @@ async def main():
 print(get_host_ip()) #显示本机IP地址
 
 asyncio.run(main())
+
