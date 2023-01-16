@@ -12,6 +12,7 @@ HB roaster M2S/M6S  TC4 to websocket with python on Armbian
 4. 由于使用的是linux+python+wifi的基本架构，所以硬件部分的是可以按照自己手上硬件来配置。
    
  ## 硬件部分
+ #### 买材料部分
 1. linux小主机，需要有USB接口。比较好的选择如下：
 - **Orangepi zero** （推荐，有USB有wifi 插卡就可以了，**记得要把散热器一并买了。官方是有一个套装的！**）[连接](https://item.taobao.com/item.htm?spm=a1z09.2.0.0.706f2e8dOUH9aR&id=670536815398&_u=g1ap2648ab1)
 - 友善 nano pi   （有USB，没有Wi-Fi，需要自己接线
@@ -28,6 +29,7 @@ HB roaster M2S/M6S  TC4 to websocket with python on Armbian
 5. usb供电线。micro USB,双头 50CM长的。
         [micarUSB供电线连接](https://detail.tmall.com/item.htm?_u=g1ap2644820&id=591913993020&spm=a1z09.2.0.0.706f2e8dOUH9aR)
 6. 海绵双面胶、扎带、热熔胶
+#### 安装   
    
 ## 软件部分
 #### 操作系统   
@@ -42,3 +44,6 @@ HB roaster M2S/M6S  TC4 to websocket with python on Armbian
    安装完成后检查是否安装成功   
    > pip3 list 
 5. 电脑上还需要一个Thonny 通过python（SSH）方式来上传代码、测试 还是有配置服务等等
+#### Thonny的操作
+#### 自作成开机自动启动的服务
+#### Artisan端的配置
