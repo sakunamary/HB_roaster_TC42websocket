@@ -5,6 +5,7 @@
 import asyncio
 import time,serial,json,socket
 import websockets
+import os
 
 
 #全局变量定义
@@ -121,7 +122,8 @@ async def handler(websocket, path):
                 # print(message)
                 # print(send_back_json)
                 await websocket.send(send_back_json)
-            #elif data['command'] == 'getData':
+            elif data['command'] == 'ShutDown' :
+                print(os.system("shutdown -P "))
 
         #处理artisan发送过来的websocket的close指令                    
         except websockets.exceptions.ConnectionClosedError:
