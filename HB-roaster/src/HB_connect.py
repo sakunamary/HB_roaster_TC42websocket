@@ -13,7 +13,7 @@ import websockets
 port = '/dev/tty.usbserial-14310'
 # port = '/dev/ttyUSB0'
 #定义buadrate
-buadrate = 115200
+buadrate = 57600
 
 #对象声明
 #声明串口
@@ -107,22 +107,26 @@ def get_tempeture():
 
 async def handler(websocket, path):
     while True:
-        message = await websocket.recv()
-        data = json.loads(message)
+        try:
+            message = await websocket.recv()
+            data = json.loads(message)
         # {"command": "getData", "id": 35632, "roasterID": 0}
         # {"data":{"BT":24.875,"ET":23.25},"id":35632}
         
-        if data['command'] == 'getData':
+            if data['command'] == 'getData':
            # print(data['command'])
            # get_tempeture(data['id']) # 获取一次温度数据
 
-            send_back_json = '{"data":'+ get_tempeture() +',"id":'+ str(data['id']) + '}'
-            print(message)
-            print(send_back_json)
-            await websocket.send(send_back_json)
-    else:
-        await websocket.close()
-        print("connection is closed")            
+                send_back_json = '{"data":'+ get_tempeture() +',"id":'+ str(data['id']) + '}'
+                # print(message)
+                # print(send_back_json)
+                await websocket.send(send_back_json)
+        except websockets.exceptions.ConnectionClosedOK:
+            print("Websockets is closed")
+            break
+    # else:
+    #     await websocket.close()
+    #     print("connection is closed")            
         # else:
         #     send_back_json = 'websokcet is closed'
         #     await websocket.send(send_back_json)
@@ -140,6 +144,7 @@ async def main():
 
 #主程序
 print("WebSockets server :",get_host_ip()) #显示本机IP地址
+print("Serial Port:",serial_port.name)
+print("Baudrate:",serial_port.baudrate)
 
 asyncio.run(main())
-
