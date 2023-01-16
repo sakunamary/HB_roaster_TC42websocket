@@ -121,6 +121,13 @@ async def handler(websocket, path):
                 # print(message)
                 # print(send_back_json)
                 await websocket.send(send_back_json)
+            #elif data['command'] == 'getData':
+
+                            
+        except websockets.exceptions.ConnectionClosedError:
+            print("Websockets is closed")
+            break
+
         except websockets.exceptions.ConnectionClosedOK:
             print("Websockets is closed")
             break
@@ -135,6 +142,7 @@ async def handler(websocket, path):
  
 async def main():
     async with websockets.serve(handler, "", 8080):
+        print("Websockets started")
         await asyncio.Future()  # run forever
 
 
