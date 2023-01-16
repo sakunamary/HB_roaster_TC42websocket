@@ -47,49 +47,59 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 5. 电脑上还需要一个Thonny 通过python（SSH）方式来上传代码、测试 还是有配置服务等等
    
 #### Thonny的操作
-     (TBC)
+
+[请看B站视频](https://www.armbian.com/orange-pi-zero/)
+
 #### 自作成开机自动启动的服务
 1. 在　`/lib/systemd/system/`　新建　`HB_connect.service` **所有路径都用绝对路径**
-   >`sudo nano /lib/systemd/system/HB_connect.service`
+    >`sudo nano /lib/systemd/system/HB_connect.service`
 
-输入以下内容
->[Unit]
->#这段是描述，随便写写
->Description=HB_connect_service
->
->[Service]
->#你的Ubuntu 用户名称
->User=root
->
->#你的用户分组默认与用户名相同
->Group=root
->
->#这段非常重要，start.sh 是你开机要执行的shell 脚本,全部用绝对路径
->ExecStart=/bin/bash /home/game/glory_btps1/AP/rec1/start.sh
->ExecStop=/bin/kill $MAINPID
->PrivateTmp=true
->
->[Install]
->WantedBy=multi-user.target
+   输入以下内容
+    >[Unit]
+    >Description=HB_connect_service
+    >
+    >[Service]
+    >User=root
+    >Group=root
+    >
+    >#这段非常重要，start.sh 是你开机要执行的shell 脚本,全部用绝对路径
+    >ExecStart=/bin/bash /home/game/glory_btps1/AP/rec1/start.sh
+    >ExecStop=/bin/kill $MAINPID
+    >PrivateTmp=true
+    >
+    >[Install]
+    >WantedBy=multi-user.target
+
+    保存关闭
 
 
-下面就是写这个op.sh 脚本，用于启动一个叫op.py 的python 程序
->vi op.sh
-#!/bin/bash
-path=$(cd $(dirname $0);pwd)
-cd "$path"
-#/home/game/anaconda3/bin/python start-gate.py > p.log
+2. 写个 start.sh 脚本，用于启动HB_connect.py 的python3 程序
+    >`sudo nano  start.sh`
 
-/home/game/anaconda3/bin/python schd.py > p1.log
-赋予op.sh 文件夹读写权限，这一步非常重要
-sudo chmod 777 -R *
-sudo systemctl enable glory.service
-查看有无报错
-sudo systemctl daemon-reload
-sudo systemctl status glory.service
-如果显示不成功再执行
-sudo systemctl start glory.service
-sudo systemctl status glory.service
+    复制黏贴以下内容
+
+    >#!/bin/bash
+    >path=\$(cd \$(dirname \$0);pwd)
+    >cd "$path"
+    >/home/game/anaconda3/bin/python3 HB_connect.py.py > output_\$(date+%Y%m%d-%H%M%S).log
+
+    保存关闭
+
+3. 赋予start.sh 文件夹读写权限，这一步非常重要
+    >`sudo chmod 777 -R *`  
+    >`sudo systemctl enable HB_connect.service`
+
+4. 查看有无报错
+    >`sudo systemctl daemon-reload`
+    >`sudo systemctl status HB_connect.service`
+
+    如果显示不成功再执行
+
+    >`sudo systemctl start HB_connect.service`
+    >`sudo systemctl status HB_connect.service`
+
+
 
 #### Artisan端的配置
-     (TBC)
+[连接Artisan](https://www.bilibili.com/video/BV1et4y1w7i5/)
+[Artisna简单操作](https://www.bilibili.com/video/BV1AV4y1L7yL/)
