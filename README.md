@@ -63,7 +63,7 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
     >Group=root
     >
     >#这段非常重要，start.sh 是你开机要执行的shell 脚本,全部用绝对路径
-    >ExecStart=/bin/bash /home/game/glory_btps1/AP/rec1/start.sh
+    >ExecStart=/bin/bash /root/start.sh
     >ExecStop=/bin/kill $MAINPID
     >PrivateTmp=true
     >
@@ -73,15 +73,17 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
     保存关闭
 
 
-2. 写个 start.sh 脚本，用于启动HB_connect.py 的python3 程序
-    >`sudo nano  start.sh`
+2. 写个 /root/start.sh 脚本，用于启动HB_connect.py 的python3 程序
+    >`sudo nano  /root/start.sh`
 
     复制黏贴以下内容
 
     >#!/bin/bash
     >path=\$(cd \$(dirname \$0);pwd)
     >cd "$path"
-    >/home/game/anaconda3/bin/python3 HB_connect.py.py > output_\$(date+%Y%m%d-%H%M%S).log
+    >
+    >#which python3 :/usr/bin/
+    >/usr/bin/python3 HB_connect.py >> output_\$(date +"%Y%m%d_%H%M%S").log
 
     保存关闭
 
