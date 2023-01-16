@@ -123,21 +123,14 @@ async def handler(websocket, path):
                 await websocket.send(send_back_json)
             #elif data['command'] == 'getData':
 
-                            
+        #处理artisan发送过来的websocket的close指令                    
         except websockets.exceptions.ConnectionClosedError:
             print("Websockets is closed")
             break
-
+        #处理artisan发送过来的websocket的close指令 
         except websockets.exceptions.ConnectionClosedOK:
             print("Websockets is closed")
             break
-    # else:
-    #     await websocket.close()
-    #     print("connection is closed")            
-        # else:
-        #     send_back_json = 'websokcet is closed'
-        #     await websocket.send(send_back_json)
-        #     # await websocket.close()
         
  
 async def main():
@@ -151,8 +144,10 @@ async def main():
 
 
 #主程序
-print("WebSockets server :",get_host_ip()) #显示本机IP地址
-print("Serial Port:",serial_port.name)
-print("Baudrate:",serial_port.baudrate)
-
-asyncio.run(main())
+if __name__ == '__main__':
+    #显示基本信息，用于debug，生产使用可以注释掉
+    print("WebSockets server :",get_host_ip()) #显示本机IP地址
+    print("Serial Port:",serial_port.name)
+    print("Baudrate:",serial_port.baudrate)
+    # loop websocket的核心服务
+    asyncio.run(main())
