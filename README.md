@@ -1,5 +1,6 @@
 # HB_roaster_TC42websocket
-HB roaster M2S/M6S  TC4 to websocket with python on Armbian
+
+HB M2S/M6S roaster TC4 data to websocket with WIFI
 
 ## 前言
 本人是HB（爱趣焙）M2S-e的用户，之所以有这个项目，是因为厂家配的无线连接软件功能比不上Artisan来的灵活、强大和跟更新迭代快。再加上之前所有的烘焙记录（狙击手M1）都是在Artisan的，所以个人还是偏向于使用Artisan 。HB虽然提供了Artisan方案，不过是有线的，还要搞个电脑再搞个数据线，太累赘了。本着平头哥的性格，不服就干！研究了一下HB的设计，Artisan采用了TC4 的协议，所以用linux+python+wifi方式来实现转码和无线传输并不是一个太难和太耗资源的事情。
