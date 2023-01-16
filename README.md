@@ -49,6 +49,29 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 #### Thonny的操作
      (TBC)
 #### 自作成开机自动启动的服务
-     (TBC)
+1. 在　`/lib/systemd/system/`　新建　`HB_connect.service` **所有路径都用绝对路径**
+   >`sudo nano /lib/systemd/system/HB_connect.service`
+
+输入以下内容
+>[Unit]
+>#这段是描述，随便写写
+>Description=HB_connect_service
+>
+>[Service]
+>#你的Ubuntu 用户名称
+>User=root
+>
+>#你的用户分组默认与用户名相同
+>Group=root
+>
+>#这段非常重要，start.sh 是你开机要执行的shell 脚本,全部用绝对路径
+>ExecStart=/bin/bash /home/game/glory_btps1/AP/rec1/start.sh
+>ExecStop=/bin/kill $MAINPID
+>PrivateTmp=true
+>
+>[Install]
+>WantedBy=multi-user.target
+
+
 #### Artisan端的配置
      (TBC)
