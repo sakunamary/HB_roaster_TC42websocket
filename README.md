@@ -44,6 +44,7 @@ HB roaster M2S/M6S  TC4 to websocket with python on Armbian
    安装完成后检查是否安装成功   
    > pip3 list 
 5. 电脑上还需要一个Thonny 通过python（SSH）方式来上传代码、测试 还是有配置服务等等
+   
 #### Thonny的操作
 #### 自作成开机自动启动的服务
 #### Artisan端的配置
