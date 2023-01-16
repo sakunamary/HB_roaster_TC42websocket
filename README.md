@@ -73,5 +73,23 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 >WantedBy=multi-user.target
 
 
+下面就是写这个op.sh 脚本，用于启动一个叫op.py 的python 程序
+>vi op.sh
+#!/bin/bash
+path=$(cd $(dirname $0);pwd)
+cd "$path"
+#/home/game/anaconda3/bin/python start-gate.py > p.log
+
+/home/game/anaconda3/bin/python schd.py > p1.log
+赋予op.sh 文件夹读写权限，这一步非常重要
+sudo chmod 777 -R *
+sudo systemctl enable glory.service
+查看有无报错
+sudo systemctl daemon-reload
+sudo systemctl status glory.service
+如果显示不成功再执行
+sudo systemctl start glory.service
+sudo systemctl status glory.service
+
 #### Artisan端的配置
      (TBC)
