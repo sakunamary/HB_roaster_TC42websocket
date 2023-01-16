@@ -47,5 +47,8 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 5. 电脑上还需要一个Thonny 通过python（SSH）方式来上传代码、测试 还是有配置服务等等
    
 #### Thonny的操作
+     (TBC)
 #### 自作成开机自动启动的服务
+     (TBC)
 #### Artisan端的配置
+     (TBC)
