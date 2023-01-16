@@ -9,14 +9,15 @@ import websockets
 
 #全局变量定义
 #定义USB 接口，
-# serial_port ='/dev/ttyACM0'  # ls /dev/tty* 查询
-serial_port = '/dev/ttyUSB0'
+# port ='/dev/ttyACM0'  # ls /dev/tty* 查询
+port = '/dev/tty.usbserial-14310'
+# port = '/dev/ttyUSB0'
 #定义buadrate
 buadrate = 115200
 
 #对象声明
 #声明串口
-serial_port = serial.Serial(serial_port,buadrate,8,'N',1,timeout=0.5)
+serial_port = serial.Serial(port,buadrate,8,'N',1,timeout=0.5)
 
 #定义Websocket 数据反写的dict 类 
 class Data_JSON(object):
@@ -105,7 +106,7 @@ def get_tempeture():
 
 
 async def handler(websocket, path):
-    if (True):
+    while True:
         message = await websocket.recv()
         data = json.loads(message)
         # {"command": "getData", "id": 35632, "roasterID": 0}
@@ -116,12 +117,16 @@ async def handler(websocket, path):
            # get_tempeture(data['id']) # 获取一次温度数据
 
             send_back_json = '{"data":'+ get_tempeture() +',"id":'+ str(data['id']) + '}'
-        # print(message)
-        # print(send_back_json)
-        await websocket.send(send_back_json)
-        else:
-            send_back_json = 'websokcet is closed'
+            print(message)
+            print(send_back_json)
+            await websocket.send(send_back_json)
+    else:
         await websocket.close()
+        print("connection is closed")            
+        # else:
+        #     send_back_json = 'websokcet is closed'
+        #     await websocket.send(send_back_json)
+        #     # await websocket.close()
         
  
 async def main():
@@ -134,7 +139,7 @@ async def main():
 
 
 #主程序
-print(get_host_ip()) #显示本机IP地址
+print("WebSockets server :",get_host_ip()) #显示本机IP地址
 
 asyncio.run(main())
 
