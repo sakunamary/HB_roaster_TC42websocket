@@ -48,7 +48,7 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
    
 #### Thonny的操作
 
-[请看B站视频](https://www.armbian.com/orange-pi-zero/)
+[请看B站视频-录制中](https://www.armbian.com/orange-pi-zero/)
 
 #### 自作成开机自动启动的服务
 1. 在　`/lib/systemd/system/`　新建　`HB_connect.service` **所有路径都用绝对路径**
