@@ -103,5 +103,7 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 
 
 #### Artisan端的配置
-1.[连接Artisan](https://www.bilibili.com/video/BV1et4y1w7i5/)
-2.[Artisna简单操作](https://www.bilibili.com/video/BV1AV4y1L7yL/)
+
+1. [连接Artisan](https://www.bilibili.com/video/BV1et4y1w7i5/)
+2. [Artisna简单操作](https://www.bilibili.com/video/BV1AV4y1L7yL/)
+3. 配置文件见`/refer参考资料`里面的aset 文件。这导入artisan就OK了。
