@@ -14,7 +14,7 @@ import os
 port = '/dev/tty.usbserial-14310'
 # port = '/dev/ttyUSB0'
 #定义buadrate
-buadrate = 57600
+buadrate = 115200
 
 #对象声明
 #声明串口
