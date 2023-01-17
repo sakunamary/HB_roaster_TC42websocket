@@ -93,11 +93,13 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 
 4. 查看有无报错
     >`sudo systemctl daemon-reload`
+
     >`sudo systemctl status HB_connect.service`
 
     如果显示不成功再执行
 
     >`sudo systemctl start HB_connect.service`
+    
     >`sudo systemctl status HB_connect.service`
 
 
