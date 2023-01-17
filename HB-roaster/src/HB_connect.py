@@ -14,7 +14,7 @@ import os
 port = '/dev/tty.usbserial-14310'
 # port = '/dev/ttyUSB0'
 #定义buadrate
-buadrate = 115200
+buadrate = 57600
 
 #对象声明
 #声明串口
@@ -110,10 +110,11 @@ async def handler(websocket, path):
     while True:
         try:
             message = await websocket.recv()
+            # print(message)
             data = json.loads(message)
         # {"command": "getData", "id": 35632, "roasterID": 0}
         # {"data":{"BT":24.875,"ET":23.25},"id":35632}
-        
+
             if data['command'] == 'getData':
            # print(data['command'])
            # get_tempeture(data['id']) # 获取一次温度数据
@@ -122,8 +123,11 @@ async def handler(websocket, path):
                 # print(message)
                 # print(send_back_json)
                 await websocket.send(send_back_json)
-            elif data['command'] == 'ShutDown' :
+                
+            elif data['command'] == 999 :
+                # print("send shundown command")
                 print(os.system("shutdown -P "))
+
 
         #处理artisan发送过来的websocket的close指令                    
         except websockets.exceptions.ConnectionClosedError:
@@ -148,8 +152,8 @@ async def main():
 #主程序
 if __name__ == '__main__':
     #显示基本信息，用于debug，生产使用可以注释掉
-    print("WebSockets server :",get_host_ip()) #显示本机IP地址
-    print("Serial Port:",serial_port.name)
-    print("Baudrate:",serial_port.baudrate)
+    #print("WebSockets server :",get_host_ip()) #显示本机IP地址
+    #print("Serial Port:",serial_port.name)
+    #print("Baudrate:",serial_port.baudrate)
     # loop websocket的核心服务
     asyncio.run(main())
