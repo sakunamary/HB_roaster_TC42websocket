@@ -152,8 +152,8 @@ async def main():
 #主程序
 if __name__ == '__main__':
     #显示基本信息，用于debug，生产使用可以注释掉
-    #print("WebSockets server :",get_host_ip()) #显示本机IP地址
-    #print("Serial Port:",serial_port.name)
-    #print("Baudrate:",serial_port.baudrate)
+    print("WebSockets server :",get_host_ip()) #显示本机IP地址
+    print("Serial Port:",serial_port.name)
+    print("Baudrate:",serial_port.baudrate)
     # loop websocket的核心服务
     asyncio.run(main())
