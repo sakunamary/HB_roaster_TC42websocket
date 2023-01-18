@@ -40,7 +40,7 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 3. pip3     可以用以下命令安装
    >`sudo apt install python3-pip`
 4. 需要安装的python库 ：pyserial(默认自带的)，asyncio，websockets，json，可以用以下命令安装
-   >`sudo pip3 install pyserial asyncio websockets json`
+   >`sudo pip3 install pyserial asyncio websockets`
 
    安装完成后检查是否安装成功   
    > pip3 list 
