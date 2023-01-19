@@ -35,8 +35,14 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 ## 软件部分
 #### 操作系统   
 
-1. Armbian kernel 5.10.60 以下 [link](https://mirror.yandex.ru/mirrors/armbian/archive/orangepizero/archive/Armbian_21.05.6_Orangepizero_buster_current_5.10.43.img.xz) 
-2. python3  系统自带的是 3.7.3 
+1. Armbian kernel 改kernel为5.10.60 以下 [link](https://www.armbian.com/orange-pi-zero/)
+   具体方法如下：
+   1. `sudo armbian-config`
+   2. 菜单选择 system -> Other > 确认继续->kernel 选 5.10.43.然后让系统自己安装，完成后会自动重启。
+   3. 再次进入`armbian-config`
+   4. 菜单选择 system -> Freeze 锁定内核，这样在apt upgrade 的时候不会误伤kernel
+   
+2. python3  系统自带的是 3.9.2 
 3. pip3     可以用以下命令安装
    >`sudo apt install python3-pip`
 4. 需要安装的python库 ：pyserial(默认自带的)，asyncio，websockets，json，可以用以下命令安装
@@ -62,7 +68,7 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 
     执行这个命令来固定wifi网卡的MAC 地址 
     > nmcli con modify "your SSID" wifi.cloned-mac-address 12:81:9F:A2:A1:DF
-    
+
 2. 在　`/lib/systemd/system/`　新建　`HB_connect.service` **所有路径都用绝对路径**
     >`sudo nano /lib/systemd/system/HB_connect.service`
 
@@ -105,7 +111,7 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 5. 查看有无报错
     >`sudo systemctl daemon-reload`
 
-    >`sudo systemctl enable HB_connect.service`
+    >`sudo systemctl start HB_connect.service`
 
     >`sudo systemctl status HB_connect.service`
 
