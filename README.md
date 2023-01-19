@@ -79,8 +79,7 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
     复制黏贴以下内容
 
     >#!/bin/bash
-    >path=\$(cd \$(dirname \$0);pwd)
-    >cd "$path"
+    >cd "/root"
     >
     >#which python3 :/usr/bin/
     >/usr/bin/python3 HB_connect.py >> output_\$(date +"%Y%m%d_%H%M%S").log
