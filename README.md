@@ -35,12 +35,12 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 ## 软件部分
 #### 操作系统   
 
-1. Armbian [详情](https://www.armbian.com/orange-pi-zero/) bullseye or jammy 都可以
-2. python3  系统自带的是 3.9.2 
+1. Armbian kernel 5.10.60 以下 [link](https://mirror.yandex.ru/mirrors/armbian/archive/orangepizero/archive/Armbian_21.05.6_Orangepizero_buster_current_5.10.43.img.xz) 
+2. python3  系统自带的是 3.7.3 
 3. pip3     可以用以下命令安装
    >`sudo apt install python3-pip`
 4. 需要安装的python库 ：pyserial(默认自带的)，asyncio，websockets，json，可以用以下命令安装
-   >`sudo pip3 install pyserial asyncio websockets`
+   >`sudo pip3 install setuptools pyserial asyncio websockets`
 
    安装完成后检查是否安装成功   
    > pip3 list 
@@ -51,7 +51,19 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 [请看B站视频-录制中](https://www.armbian.com/orange-pi-zero/)
 
 #### 自作成开机自动启动的服务
-1. 在　`/lib/systemd/system/`　新建　`HB_connect.service` **所有路径都用绝对路径**
+
+1. 设置固定的MAC地址：
+    >nmcli  //用来查询wifi对应的MAC 地址
+
+    >wlan0: connected to rainly
+        "ST-Ericsson Wi-Fi"
+        wifi (xradio_wlan), 12:81:9F:A2:A1:DF, hw, mtu 1500 //记录MAC 地址，下一个命令会有用
+    >
+
+    执行这个命令来固定wifi网卡的MAC 地址 
+    > nmcli con modify "your SSID" wifi.cloned-mac-address 12:81:9F:A2:A1:DF
+    
+2. 在　`/lib/systemd/system/`　新建　`HB_connect.service` **所有路径都用绝对路径**
     >`sudo nano /lib/systemd/system/HB_connect.service`
 
    输入以下内容
@@ -73,7 +85,7 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
     保存关闭
 
 
-2. 写个 /root/start.sh 脚本，用于启动HB_connect.py 的python3 程序
+3. 写个 /root/start.sh 脚本，用于启动HB_connect.py 的python3 程序
     >`sudo nano  /root/start.sh`
 
     复制黏贴以下内容
@@ -86,11 +98,11 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 
     保存关闭
 
-3. 赋予start.sh 文件夹读写权限，这一步非常重要
+4. 赋予start.sh 文件夹读写权限，这一步非常重要
     >`sudo chmod 777 -R *`  
     >`sudo systemctl enable HB_connect.service`
 
-4. 查看有无报错
+5. 查看有无报错
     >`sudo systemctl daemon-reload`
 
     >`sudo systemctl enable HB_connect.service`
