@@ -16,8 +16,8 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
  #### 买材料部分
 1. linux小主机，需要有USB接口。比较好的选择如下：
 - **Orangepi zero** （推荐，有USB有wifi 插卡就可以了，**记得要把散热器一并买了。官方是有一个套装的！**）[连接](https://item.taobao.com/item.htm?spm=a1z09.2.0.0.706f2e8dOUH9aR&id=670536815398&_u=g1ap2648ab1)
-- 友善 nano pi   （有USB，没有Wi-Fi，需要自己接线
-- 其他。有USB 、有wifi、支持 Armbian的就可以了。
+- 友善 nano pi   （有USB，没有Wi-Fi，需要自己接线,)
+- 其他有USB 、有wifi、支持 Armbian的就可以了。
 2. TF 卡 ， 只要4GB以上就可以了。不过为了稳定，推荐大厂行车记录仪的那种卡。
    
 3. USB数据线。 type A  方口 右弯。记住这个几个关键词就不会迷路。烘焙机主板的接口是用打印机那种 Type A 口，普通的直的会跟冷却风机怼不到一块去。必须用右弯头。 
@@ -35,22 +35,23 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 ## 软件部分
 #### 操作系统   
 
-1. Armbian kernel 改kernel为5.10.60 以下 [link](https://www.armbian.com/orange-pi-zero/)
+1. Armbian kernel 改kernel为5.10.60 以下 [固件下载连接]](https://www.armbian.com/orange-pi-zero/)
    具体方法如下：
    1. `sudo armbian-config`
    2. 菜单选择 system -> Other > 确认继续->kernel 选 5.10.43.然后让系统自己安装，完成后会自动重启。
    3. 再次进入`armbian-config`
    4. 菜单选择 system -> Freeze 锁定内核，这样在apt upgrade 的时候不会误伤kernel
+2. 其他开发板的操作也是一样的流程。
    
-2. python3  系统自带的是 3.9.2 
-3. pip3     可以用以下命令安装
+3. python3  系统自带的是 3.9.2 
+4. pip3     可以用以下命令安装
    >`sudo apt install python3-pip`
-4. 需要安装的python库 ：pyserial(默认自带的)，asyncio，websockets，json，可以用以下命令安装
+5. 需要安装的python库 ：pyserial(默认自带的)，asyncio，websockets，json，可以用以下命令安装
    >`sudo pip3 install setuptools pyserial asyncio websockets`
 
    安装完成后检查是否安装成功   
    > pip3 list 
-5. 电脑上还需要一个Thonny 通过python（SSH）方式来上传代码、测试 还是有配置服务等等
+6. 电脑上还需要一个Thonny 通过python（SSH）方式来上传代码、测试 还是有配置服务等等
    
 #### Thonny的操作
 
@@ -59,8 +60,9 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 #### 自作成开机自动启动的服务
 
 1. 设置固定的MAC地址：
-    >nmcli  //用来查询wifi对应的MAC 地址
-
+    查询wifi对应的MAC 地址
+    >nmcli  
+    输出结果
     >wlan0: connected to rainly
         "ST-Ericsson Wi-Fi"
         wifi (xradio_wlan), 12:81:9F:A2:A1:DF, hw, mtu 1500 //记录MAC 地址，下一个命令会有用
@@ -88,7 +90,7 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
     >[Install]
     >WantedBy=multi-user.target
 
-    保存关闭
+    保存 ctrl+s 关闭 ctrl+X
 
 
 3. 写个 /root/start.sh 脚本，用于启动HB_connect.py 的python3 程序
@@ -102,7 +104,7 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
     >#which python3 :/usr/bin/
     >/usr/bin/python3 HB_connect.py >> output_\$(date +"%Y%m%d_%H%M%S").log
 
-    保存关闭
+    保存 ctrl+s 关闭 ctrl+X
 
 4. 赋予start.sh 文件夹读写权限，这一步非常重要
     >`sudo chmod 777 -R *`  
