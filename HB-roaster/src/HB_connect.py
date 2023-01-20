@@ -126,7 +126,11 @@ async def handler(websocket, path):
                 
             elif data['command'] == 999 :
                 # print("send shundown command")
-                print(os.system("shutdown -P "))
+                print(os.system("shutdown -P now "))
+
+            elif data['command'] == 888 :
+                # print("send reboot command")
+                print(os.system("reboot "))
 
 
         #处理artisan发送过来的websocket的close指令                    
