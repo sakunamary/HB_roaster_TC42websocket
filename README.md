@@ -56,7 +56,7 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
    
 #### Thonny的操作
 
-[请看B站视频-录制中](https://www.armbian.com/orange-pi-zero/)
+[Thonny python IDE ssh登陆远程python演示](https://www.bilibili.com/video/BV1PA411d74k/?share_source=copy_web&vd_source=9c7b2e32c205ad765a4540d8b93a9eeb)
 
 #### 自作成开机自动启动的服务
 
@@ -66,11 +66,11 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
     输出结果
     >wlan0: connected to rainly
         "ST-Ericsson Wi-Fi"
-        wifi (xradio_wlan), 12:81:9F:A2:A1:DF, hw, mtu 1500 //记录MAC 地址，下一个命令会有用
+        wifi (xradio_wlan), 12:81:9E:A2:A1:DE, hw, mtu 1500 //记录MAC 地址，下一个命令会有用
     >
 
     执行这个命令来固定wifi网卡的MAC 地址 
-    > nmcli con modify "your SSID" wifi.cloned-mac-address 12:81:9F:A2:A1:DF
+    > nmcli con modify "your SSID" wifi.cloned-mac-address 12:81:9:EA2:A1:DE
 
 2. 在　`/lib/systemd/system/`　新建　`HB_connect.service` **所有路径都用绝对路径**
     >`sudo nano /lib/systemd/system/HB_connect.service`
