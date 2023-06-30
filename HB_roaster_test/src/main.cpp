@@ -111,7 +111,7 @@ void loop() {
     WebSerial.println(myString);
     }
 
-
+    delay(1000);
 
 
     Serial.print("CHAN;2400\n");
