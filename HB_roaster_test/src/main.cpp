@@ -105,26 +105,26 @@ void loop() {
 
     Serial.print("READ\n");
     delay(100);
-
+    WebSerial.println("chan1300 ");
        if(Serial.available()){
         myString = Serial.readString();
     WebSerial.println(myString);
     }
-    WebSerial.printf("\n");
+
 
 
 
     Serial.print("CHAN;2400\n");
         delay(100);
     Serial.flush();
-
+    WebSerial.println("chan2400");
     Serial.print("READ\n");
     delay(100);
        if(Serial.available()){
         myString = Serial.readString();
          WebSerial.println(myString);
     }
-WebSerial.printf(" \n");
+
     delay(1000);
 
 }
