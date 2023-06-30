@@ -1,4 +1,3 @@
-
 #include <Arduino.h>
 #if defined(ESP8266)
   #include <ESP8266WiFi.h>
@@ -8,19 +7,21 @@
   #include <AsyncTCP.h>
 #endif
 #include <ESPAsyncWebServer.h>
-#include <WebSerialLite.h>
+#include <WebSerial.h>
 
 AsyncWebServer server(80);
+
 char ap_name[30] ;
 uint8_t macAddr[6];
-char serial_msg[50];
+String myString;
 
 const char* ssid = "esp_serial"; // Your WiFi SSID
 const char* password = "12345678"; // Your WiFi Password
 
+
 /* Message callback of WebSerial */
 void recvMsg(uint8_t *data, size_t len){
-  WebSerial.println("Received Data...");    
+  WebSerial.println("Received Data...");
   String d = "";
   for(int i=0; i < len; i++){
     d += char(data[i]);
@@ -28,23 +29,23 @@ void recvMsg(uint8_t *data, size_t len){
   WebSerial.println(d);
 }
 
+
+
 void setup() {
     Serial.begin(115200);
 
             WiFi.macAddress(macAddr); 
             // Serial_debug.println("WiFi.mode(AP):");
             WiFi.mode(WIFI_AP);
-            sprintf( ap_name ,"TC4-WB_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
+            sprintf( ap_name ,"Serial_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
             WiFi.softAP(ap_name, "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
 
-    IPAddress IP = WiFi.softAPIP();
-    Serial.print("AP IP address: ");
-    Serial.println(IP);
-    // WebSerial is accessible at "<IP Address>/webserial" in browser
-    WebSerial.begin(&server);
-    /* Attach Message Callback */
-    WebSerial.onMessage(recvMsg);
-    server.begin();
+  // SerailHTML is accessible at "<IP Address>/serial" in browser
+  WebSerial.begin(&server);
+  //SerialHTML.onMessage(receiveMessage);
+
+  server.begin();
+
 }
 
 void loop() {
@@ -98,14 +99,32 @@ void loop() {
 */
 
     Serial.print("CHAN;1300\n");
-    delay(50);
-    serial_msg = Serial.readString();
-    WebSerial.println(serial_msg);
-
-    delay(2000);
+    delay(100);
+    Serial.flush();
 
 
+    Serial.print("READ\n");
+    delay(100);
+
+       if(Serial.available()){
+        myString = Serial.readString();
+    WebSerial.println(myString);
+    }
+    WebSerial.printf("\n");
 
 
+
+    Serial.print("CHAN;2400\n");
+        delay(100);
+    Serial.flush();
+
+    Serial.print("READ\n");
+    delay(100);
+       if(Serial.available()){
+        myString = Serial.readString();
+         WebSerial.println(myString);
+    }
+WebSerial.printf(" \n");
+    delay(1000);
 
 }
