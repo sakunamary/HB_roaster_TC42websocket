@@ -24,18 +24,32 @@ AsyncWebSocket ws("/websocket"); // access at ws://[esp ip]/
 char ap_name[30] ;
 uint8_t macAddr[6];
 String MsgString;
+String local_IP;
 
 const char* ssid = "esp_serial"; // Your WiFi SSID
 const char* password = "12345678"; // Your WiFi Password
-
+user_wifi_t user_wifi = {" ", " ", false};
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0};
 
 
 void  get_data();
-
+void notFound(AsyncWebServerRequest *request);    
 void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);//Handle WebSocket event
-
 void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){};
+String IpAddressToString(const IPAddress &ipAddress);      
+
+
+
+String IpAddressToString(const IPAddress &ipAddress)
+{
+    return String(ipAddress[0]) + String(".") +
+           String(ipAddress[1]) + String(".") +
+           String(ipAddress[2]) + String(".") +
+           String(ipAddress[3]);
+}
+
+
+
 
 void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
 
@@ -113,6 +127,15 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
     break;
     }
 }
+
+
+
+void notFound(AsyncWebServerRequest *request)
+{
+    request->send(404, "text/plain", "Opps....Not found");
+}
+
+
 /* Message callback of WebSerial */
 /*
 void recvMsg(uint8_t *data, size_t len){
@@ -174,16 +197,23 @@ void setup() {
         ; // wait for serial port ready
     }
    // serial_in.begin(115200,SWSERIAL_8N1,D1,D2 );  //RX D1 TX D2
+    Serial.printf("\nTC4-WB  STARTING...\n");
+    Serial.printf("\nRead data from EEPROM...\n");
+    // set up eeprom data
+    EEPROM.begin(sizeof(user_wifi));
+    EEPROM.get(0, user_wifi);
 
+ //user_wifi.Init_mode = true ;
 
-WiFi.macAddress(macAddr); 
-// Serial_debug.println("WiFi.mode(AP):");
-WiFi.mode(WIFI_AP);
-sprintf( ap_name ,"Serial_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
-WiFi.softAP(ap_name, "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
+if (user_wifi.Init_mode) 
+{
+    strcat(user_wifi.ssid,"HB_WIFI");
+    strcat(user_wifi.password,"12345678");
+    user_wifi.Init_mode = false ;
+    EEPROM.put(0, user_wifi);
+    EEPROM.commit();
+}
 
-
-  //WebSerial.begin(&server);
 Serial.printf("\nStart Task...\n");
     /*---------- Task Definition ---------------------*/
     // Setup tasks to run independently.
@@ -196,7 +226,7 @@ Serial.printf("\nStart Task...\n");
         ,
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
-    Serial.printf("\n1:get_data...\n");
+    Serial.printf("\nTASK1:get_data...\n");
 
     xTaskCreatePinnedToCore(
         task_send_data,"send_data" // MAX6675 thermal task to read Bean-Temperature (BT)
@@ -208,11 +238,121 @@ Serial.printf("\nStart Task...\n");
         NULL, 
         1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
-    Serial.printf("\n2:send_data...\n");
+    Serial.printf("\nTASK2:send_data...\n");
 
+
+
+  //初始化网络服务
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(user_wifi.ssid, user_wifi.password);
+
+    byte tries = 0;
+    while (WiFi.status() != WL_CONNECTED)
+    {
+
+        delay(1000);
+        Serial.println("wifi not ready");
+
+        if (tries++ > 7)
+        {
+            WiFi.macAddress(macAddr); 
+            // Serial_debug.println("WiFi.mode(AP):");
+            WiFi.mode(WIFI_AP);
+            sprintf( ap_name ,"HB_WIFI_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
+            WiFi.softAP(ap_name, "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
+            break;
+        }
+        // show AP's IP
+    }
+
+
+    Serial.print("HB_WIFI's IP:");
+
+    if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
+    {
+        Serial.println(IpAddressToString(WiFi.softAPIP()));
+        local_IP = IpAddressToString(WiFi.softAPIP());
+    }
+    else
+    {
+        Serial.println(IpAddressToString(WiFi.localIP()));
+        local_IP = IpAddressToString(WiFi.localIP());
+    }
+    // init websocket
+    Serial.println("WebSocket started!");
+    // attach AsyncWebSocket
+    ws.onEvent(onEvent);
+    server.addHandler(&ws);
+
+
+    // for index.html
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+                  { request->send_P(200, "text/html", index_html, processor); });
+
+    // get the value from index.html
+    server.on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
+                  {
+//get value form webpage      
+    strncpy(user_wifi.ssid,request->getParam("ssid")->value().c_str(), sizeof(user_wifi.ssid) );
+    strncpy(user_wifi.password,request->getParam("password")->value().c_str(), sizeof(user_wifi.password) );
+    user_wifi.ssid[request->getParam("ssid")->value().length()] = user_wifi.password[request->getParam("password")->value().length()] = '\0';  
+//Svae EEPROM 
+    EEPROM.put(0, user_wifi);
+    EEPROM.commit();
+//output wifi_sussce html;
+    request->send_P(200, "text/html", wifi_sussce_html); });
+
+
+  // upload a file to /upload
+  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
+    request->send(200);
+  }, onUpload);
+       // Simple Firmware Update Form
+  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
+                    {
+                    request->send(200, "text/html", update_html);
+                    });
+
+  server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
+                        //shouldReboot = !Update.hasError();
+                        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", (Update.hasError())?update_fail_html:update_OK_html);
+                        response->addHeader("Connection", "close");
+                        request->send(response);
+                        },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
+                        if(!index){
+                        vTaskSuspend(xHandle_indicator); //停止显示
+                        Serial.printf("Update Start: %s\n", filename.c_str());
+
+                        if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)){
+                            Update.printError(Serial);
+                        }
+                        }
+                        if(!Update.hasError()){
+                        if(Update.write(data, len) != len){
+                            Update.printError(Serial);
+                        }
+                        }
+                        if(final){
+                        if(Update.end(true)){
+                            Serial.printf("Update Success: %uB\n", index+len);
+                            Serial.printf("ESP32 will reboot after 3s \n");
+                            vTaskDelay(3000);
+                            ESP.restart();
+
+                        } else {
+                            Update.printError(Serial);
+                            Serial.printf("ESP32 will reboot after 3s \n");
+                            vTaskDelay(3000);
+                            ESP.restart();
+                        }
+                        }
+  });         
+
+    server_OTA.onNotFound(notFound); // 404 page seems not necessary...
+    server_OTA.onFileUpload(onUpload);
 
   server.begin();
-
+    Serial.println("HTTP server started");
 }
 
 void loop() {

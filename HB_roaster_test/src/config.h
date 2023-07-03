@@ -10,6 +10,15 @@
 #define VERSION "1.0.0"
 
 
+// 网页设置的参数
+ typedef struct eeprom_settings 
+{
+  char ssid[60]; //增加到30个字符
+  char password[60]; //增加到30个字符
+  bool   Init_mode ; //是否初始化模式
+} user_wifi_t;
+
+extern user_wifi_t  user_wifi ;
 
 //定义artisan 交互的数组
 typedef struct  data_to_artisan {
