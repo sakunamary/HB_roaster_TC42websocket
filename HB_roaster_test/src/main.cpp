@@ -8,6 +8,10 @@
 #endif
 #include <ESPAsyncWebServer.h>
 #include <WebSerial.h>
+#include "SoftwareSerial.h"
+
+
+SoftwareSerial serial_in;// D1 RX_drumer  D2 TX_drumer 
 
 AsyncWebServer server(80);
 
@@ -33,6 +37,8 @@ void recvMsg(uint8_t *data, size_t len){
 
 void setup() {
     Serial.begin(115200);
+
+    serial_in.begin(115200,SWSERIAL_8N1,D1,D2 );  //RX D1 TX D2
 
             WiFi.macAddress(macAddr); 
             // Serial_debug.println("WiFi.mode(AP):");
@@ -98,33 +104,31 @@ void loop() {
 
 */
 
-    Serial.print("CHAN;1300\n");
-    delay(100);
-    Serial.flush();
+
+    serial_in.print("CHAN;1300\n");
+    delay(20);
+    serial_in.flush();
+
+    serial_in.print("READ\n");
+    delay(20);
+       while (serial_in.available()){
+        myString = serial_in.readStringUntil('C');
+    }   
+        serial_in.println(myString);
 
 
-    Serial.print("READ\n");
-    delay(100);
-    WebSerial.println("chan1300 ");
-       if(Serial.available()){
-        myString = Serial.readString();
-    WebSerial.println(myString);
-    }
-
-    delay(1000);
 
 
-    Serial.print("CHAN;2400\n");
-        delay(100);
-    Serial.flush();
-    WebSerial.println("chan2400");
-    Serial.print("READ\n");
-    delay(100);
-       if(Serial.available()){
-        myString = Serial.readString();
-         WebSerial.println(myString);
-    }
+    serial_in.print("CHAN;2400\n");
+    delay(20);
+    serial_in.flush();
 
-    delay(1000);
+    serial_in.print("READ\n");
+    delay(20);
+       while (serial_in.available()){
+        myString = serial_in.readStringUntil('C');
+    }   
+        serial_in.println(myString);
+
 
 }
