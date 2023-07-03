@@ -188,7 +188,7 @@ Serial.printf("\nStart Task...\n");
     /*---------- Task Definition ---------------------*/
     // Setup tasks to run independently.
     xTaskCreatePinnedToCore(
-        TaskBatCheck, "bat_check" // 测量电池电源数据，每分钟测量一次
+        task_get_data, "get_data" // 测量电池电源数据，每分钟测量一次
         ,
         1024 // This stack size can be checked & adjusted by reading the Stack Highwater
         ,
@@ -196,10 +196,10 @@ Serial.printf("\nStart Task...\n");
         ,
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
-    Serial.printf("\nbat_check...\n");
+    Serial.printf("\n1:get_data...\n");
 
     xTaskCreatePinnedToCore(
-        TaskThermalMeter, "ThermalMeter" // MAX6675 thermal task to read Bean-Temperature (BT)
+        task_send_data,"send_data" // MAX6675 thermal task to read Bean-Temperature (BT)
         ,
         1024 // Stack size
         ,
@@ -208,7 +208,7 @@ Serial.printf("\nStart Task...\n");
         NULL, 
         1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
-    Serial.printf("\nThermalMeter...\n");
+    Serial.printf("\n2:send_data...\n");
 
 
   server.begin();
