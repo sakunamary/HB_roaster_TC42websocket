@@ -9,21 +9,129 @@
 #include <ESPAsyncWebServer.h>
 #include <WebSerial.h>
 #include "SoftwareSerial.h"
+#include "ArduinoJson.h"
+
+#define DEBUG_MODE
+#define BAUD 115200
 
 
 SoftwareSerial serial_in;// D1 RX_drumer  D2 TX_drumer 
 
 AsyncWebServer server(80);
 
+AsyncWebSocket ws("/websocket"); // access at ws://[esp ip]/
+
 char ap_name[30] ;
 uint8_t macAddr[6];
-String myString;
+String MsgString;
 
 const char* ssid = "esp_serial"; // Your WiFi SSID
 const char* password = "12345678"; // Your WiFi Password
 
 
+
+//定义artisan 交互的数组
+struct  data_to_artisan {
+    double BT;
+    double ET;
+    double  AP;
+    double inlet;
+/*
+            AT = float(res1300[0])
+            ET = float(res1300[1])
+            BT = float(res1300[2])
+            Inlet =float(res2400[1])
+*/
+
+ } To_artisan ={0.0,0.0,0.0,0.0};
+//end of 定义artisan 交互的数组
+
+
+void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);//Handle WebSocket event
+
+void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){}
+
+
+
+
+void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
+
+     //    {"command": "getData", "id": 93609, "roasterID": 0}
+    // Artisan schickt Anfrage als TXT
+    // TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
+
+    const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
+    DynamicJsonDocument doc(capacity);
+
+    switch (type)
+    {
+    case WS_EVT_DISCONNECT:
+        Serial.printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
+        break;
+    case WS_EVT_CONNECT:
+        //client connected
+         Serial.printf("ws[%s][%u] connect\n", server->url(), client->id());
+         client->printf("Hello Client %u :", client->id());
+         client->ping();
+        break;
+    case WS_EVT_ERROR:
+        //error was received from the other end
+         Serial.printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
+        break;
+    case WS_EVT_PONG:
+        //pong message was received (in response to a ping request maybe)
+        Serial.printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");   
+        break;   
+    case WS_EVT_DATA:
+        AwsFrameInfo * info = (AwsFrameInfo*)arg;
+       if(info->final && info->index == 0 && info->len == len){
+
+         Serial.printf("ws[%s][%u] %s-message[%llu]: ",server->url(), client->id(), (info->opcode == WS_TEXT)?"text":"binary", info->len);
+
+            if(info->opcode == WS_TEXT){
+                    // Extract Values lt. https://arduinojson.org/v6/example/http-client/
+                    // Artisan Anleitung: https://artisan-scope.org/devices/websockets/
+                    deserializeJson(doc, (char *)data);
+                    // char* entspricht String
+                    String command = doc["command"].as<  const char *>();
+                    // Serial_debug.printf("Command received: %s \n",command);
+                    long ln_id = doc["id"].as<long>();
+                    // Send Values to Artisan over Websocket
+                    JsonObject root = doc.to<JsonObject>();
+                    JsonObject data = root.createNestedObject("data");
+                    if (command == "getBT")
+                    {
+                        root["id"] = ln_id;
+                        data["BT"] = To_artisan.BT;
+                    }
+                    else if (command == "getET")
+                    {
+                        root["id"] = ln_id;
+                        data["ET"] = To_artisan.ET;
+                    }
+
+                    else if (command == "getData")
+                    {
+                        root["id"] = ln_id;
+                        data["BT"] = To_artisan.BT;
+                        data["AP"] = To_artisan.AP;
+                        data["inlet"] = To_artisan.inlet;                         
+ 
+
+                    }
+
+                    char buffer[200];                        // create temp buffer 200
+                    size_t len = serializeJson(doc, buffer); // serialize to buffer
+
+                    Serial.println(buffer);
+                    client->text(buffer);
+                }
+            }   
+    break;
+    }
+}
 /* Message callback of WebSerial */
+/*
 void recvMsg(uint8_t *data, size_t len){
   WebSerial.println("Received Data...");
   String d = "";
@@ -32,6 +140,45 @@ void recvMsg(uint8_t *data, size_t len){
   }
   WebSerial.println(d);
 }
+*/
+
+
+void  get_data() {
+
+//获取数据
+    serial_in.print("CHAN;1300\n");
+    delay(20);
+    serial_in.flush();
+
+    serial_in.print("READ\n");
+    delay(20);
+       while (serial_in.available()){
+        MsgString = serial_in.readStringUntil('C');
+
+    }   
+
+    #if defined DEBUG_MODE
+    Serial.println("read from drummer:");
+    Serial.println(MsgString);
+    #endif 
+
+    serial_in.print("CHAN;2400\n");
+    delay(20);
+    serial_in.flush();
+
+    serial_in.print("READ\n");
+    delay(20);
+       while (serial_in.available()){
+        MsgString = serial_in.readStringUntil('C');
+    }   
+        serial_in.println(MsgString);
+
+
+}
+
+
+
+
 
 
 
@@ -55,80 +202,6 @@ void setup() {
 }
 
 void loop() {
-
-
-/*
-    if (serial_port.isOpen()) :
-        #print("port_ok_flag:",port_ok_flag)
-
-        command = 'CHAN;1300\n'
-        serial_port.write(str2cmd(command))
-        serial_port.flush()
-        RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2] # for debug using
-        # if (rl.startswith('#')):
-        #     print("CHAN 1300:",rl)
-
-        command = 'READ\n'
-        serial_port.write(str2cmd(command))
-        time.sleep(0.1)
-        serial_port.flush()
-        RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2]
-        if (not len(RESULT_LINE) == 0 and not RESULT_LINE.startswith('#')):
-            # print("READ 1300:",RESULT_LINE)
-            res1300 = RESULT_LINE.rsplit(',')
-            AT = float(res1300[0])
-            ET = float(res1300[1])
-            BT = float(res1300[2])
-
-        command = 'CHAN;2400\n'
-        serial_port.write(str2cmd(command))
-        serial_port.flush()
-       # time.sleep(0.1)
-        RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2] # for debug using
-        # if (rl.startswith('#')):
-        #     print("CHAN 2400:",rl)
-
-        command = 'READ\n'
-        serial_port.write(str2cmd(command))
-        time.sleep(0.1)
-        serial_port.flush()
-        RESULT_LINE = serial_port.readline().decode('utf-8', 'ignore')[:-2]
-        if (not len(RESULT_LINE) == 0 and not RESULT_LINE.startswith('#')):
-            # print("READ 2400: ",rl)
-            res2400 = RESULT_LINE.rsplit(',')
-            Inlet =float(res2400[1])
-
-        String msg = serial_with_drumer.readStringUntil(',');
-
-        # 打包数据成json格式
-
-*/
-
-
-    serial_in.print("CHAN;1300\n");
-    delay(20);
-    serial_in.flush();
-
-    serial_in.print("READ\n");
-    delay(20);
-       while (serial_in.available()){
-        myString = serial_in.readStringUntil('C');
-    }   
-        serial_in.println(myString);
-
-
-
-
-    serial_in.print("CHAN;2400\n");
-    delay(20);
-    serial_in.flush();
-
-    serial_in.print("READ\n");
-    delay(20);
-       while (serial_in.available()){
-        myString = serial_in.readStringUntil('C');
-    }   
-        serial_in.println(myString);
 
 
 }
