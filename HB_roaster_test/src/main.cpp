@@ -23,6 +23,27 @@ const char* ssid = "esp_serial"; // Your WiFi SSID
 const char* password = "12345678"; // Your WiFi Password
 
 
+//设置M1 3999 版输出命令的结构数据
+//定义artisan 交互的数组
+struct  data_to_artisan {
+    double temp_env;//环境温度
+    double humi_env;//环境湿度
+    double  amp_env;//环境大气压强
+    int    heater_powerM ;//火力 手动
+    int    heater_powerA ;//火力 自动
+    int    HPM;//HPM 模式选择；>0 -> A <0 ->M  //default auto mode
+    int    air;//风门
+    int    roll;//搅拌
+    int    cooling; //冷却
+    int    sv ; // pid set value manual mode
+    int    sv_auto; //pid set value auto mode
+    int    targetC;// 豆温预设
+    int    MODE;//是否自动烘焙
+ } To_artisan ={10.0,10.0,980.00,0,0,100,0,0,0,25,25,25,-100};
+//end of 定义artisan 交互的数组
+
+
+
 /* Message callback of WebSerial */
 void recvMsg(uint8_t *data, size_t len){
   WebSerial.println("Received Data...");
@@ -106,18 +127,23 @@ void loop() {
 
 
     serial_in.print("CHAN;1300\n");
-    delay(20);
+    delay(100);
     serial_in.flush();
 
     serial_in.print("READ\n");
     delay(20);
-       while (serial_in.available()){
+       if  (serial_in.available()>0){
         myString = serial_in.readStringUntil('C');
     }   
         serial_in.println(myString);
 
 
-
+/*
+            AP = float(res1300[0])
+            ET = float(res1300[1])
+            BT = float(res1300[2])
+            Inlet =float(res2400[1])
+*/ 
 
     serial_in.print("CHAN;2400\n");
     delay(20);
