@@ -28,31 +28,14 @@ String MsgString;
 const char* ssid = "esp_serial"; // Your WiFi SSID
 const char* password = "12345678"; // Your WiFi Password
 
+data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0};
 
 
-//定义artisan 交互的数组
-struct  data_to_artisan {
-    double BT;
-    double ET;
-    double  AP;
-    double inlet;
-/*
-            AT = float(res1300[0])
-            ET = float(res1300[1])
-            BT = float(res1300[2])
-            Inlet =float(res2400[1])
-*/
-
- } To_artisan ={0.0,0.0,0.0,0.0};
-//end of 定义artisan 交互的数组
-
+void  get_data();
 
 void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);//Handle WebSocket event
 
-void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){}
-
-
-
+void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){};
 
 void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
 
@@ -183,19 +166,50 @@ void  get_data() {
 
 
 void setup() {
-    Serial.begin(115200);
 
-    serial_in.begin(115200,SWSERIAL_8N1,D1,D2 );  //RX D1 TX D2
+    xThermoDataMutex = xSemaphoreCreateMutex();
+    Serial.begin(BAUDRATE);
+    while (!Serial)
+    {
+        ; // wait for serial port ready
+    }
+   // serial_in.begin(115200,SWSERIAL_8N1,D1,D2 );  //RX D1 TX D2
 
-            WiFi.macAddress(macAddr); 
-            // Serial_debug.println("WiFi.mode(AP):");
-            WiFi.mode(WIFI_AP);
-            sprintf( ap_name ,"Serial_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
-            WiFi.softAP(ap_name, "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
 
-  // SerailHTML is accessible at "<IP Address>/serial" in browser
-  WebSerial.begin(&server);
-  //SerialHTML.onMessage(receiveMessage);
+WiFi.macAddress(macAddr); 
+// Serial_debug.println("WiFi.mode(AP):");
+WiFi.mode(WIFI_AP);
+sprintf( ap_name ,"Serial_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
+WiFi.softAP(ap_name, "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
+
+
+  //WebSerial.begin(&server);
+Serial.printf("\nStart Task...\n");
+    /*---------- Task Definition ---------------------*/
+    // Setup tasks to run independently.
+    xTaskCreatePinnedToCore(
+        TaskBatCheck, "bat_check" // 测量电池电源数据，每分钟测量一次
+        ,
+        1024 // This stack size can be checked & adjusted by reading the Stack Highwater
+        ,
+        NULL, 1 // Priority, with 1 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+        ,
+        NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
+    );
+    Serial.printf("\nbat_check...\n");
+
+    xTaskCreatePinnedToCore(
+        TaskThermalMeter, "ThermalMeter" // MAX6675 thermal task to read Bean-Temperature (BT)
+        ,
+        1024 // Stack size
+        ,
+        NULL, 3 // Priority
+        ,
+        NULL, 
+        1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
+    );
+    Serial.printf("\nThermalMeter...\n");
+
 
   server.begin();
 
