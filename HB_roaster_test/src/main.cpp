@@ -182,12 +182,6 @@ void  get_data() {
 
 }
 
-
-
-
-
-
-
 void setup() {
 
     xThermoDataMutex = xSemaphoreCreateMutex();
@@ -353,6 +347,7 @@ Serial.printf("\nStart Task...\n");
 
   server.begin();
     Serial.println("HTTP server started");
+
 }
 
 void loop() {
