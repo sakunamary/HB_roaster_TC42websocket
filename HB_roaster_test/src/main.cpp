@@ -6,18 +6,22 @@
 #include <AsyncUDP.h>
 #include <ESPAsyncWebServer.h>
 #include "Update.h"
-
+#include <HardwareSerial.h>
+#include <StringTokenizer.h>
 //#include <WebSerial.h>
-#include "SoftwareSerial.h"
+//
+//#include "SoftwareSerial.h"
 #include "ArduinoJson.h"
 #include "task_get_data.h"
 #include "task_send_data.h"
 
 
 
-#define DEBUG_MODE
 
-EspSoftwareSerial::UART Serial_in;// D10 RX_drumer  D9 TX_drumer 
+//SoftwareSerial Serial_in ;
+//spSoftwareSerial::UART Serial_in;// D10 RX_drumer  D9 TX_drumer 
+
+HardwareSerial Serial_in(1);
 
 AsyncWebServer server(80);
 
@@ -25,9 +29,11 @@ AsyncWebSocket ws("/websocket"); // access at ws://[esp ip]/
 
 char ap_name[30] ;
 uint8_t macAddr[6];
+String MSG_token[4];
 
 String local_IP;
 String MsgString;
+
 
 user_wifi_t user_wifi = {" ", " ", false};
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0};
@@ -148,21 +154,6 @@ void notFound(AsyncWebServerRequest *request)
 }
 
 
-/* Message callback of WebSerial */
-/*
-void recvMsg(uint8_t *data, size_t len){
-  WebSerial.println("Received Data...");
-  String d = "";
-  for(int i=0; i < len; i++){
-    d += char(data[i]);
-  }
-  WebSerial.println(d);
-}
-*/
-
-
-
-
 
 void task_get_data(void *pvParameters)
 { //function 
@@ -172,11 +163,13 @@ void task_get_data(void *pvParameters)
     TickType_t xLastWakeTime;
 
     const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+
+
    //const TickType_t xIntervel = (2 * 1000) / portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
-
+    int i = 0;
     for (;;) // A Task shall never return or exit.
     { //for loop
         // Wait for the next cycle (intervel 750ms).
@@ -187,27 +180,40 @@ void task_get_data(void *pvParameters)
 
             Serial_in.print("READ\n");
             delay(20);
-            while (Serial_in.available()){
+            if(Serial_in.available()>0){
                 MsgString = Serial_in.readStringUntil('C');
-
-            }   
-
-
+                MsgString.concat('C');
+            } 
+/*
             Serial.println("read from drummer:");
             Serial.println(MsgString);
+*/
+
+            StringTokenizer tokens(MsgString, ",");
+                while(tokens.hasNext()){
+                   MSG_token[i]=tokens.nextToken(); // prints the next token in the string
+                   Serial.println(MSG_token[i]);
+                   i++;
+                }
+                
+            MsgString = "";
+            i=0;
 
 
+/*
             Serial_in.print("CHAN;2400\n");
             delay(20);
             Serial_in.flush();
 
             Serial_in.print("READ\n");
             delay(20);
-            while (Serial_in.available()){
+            if(Serial_in.available()>0){
                 MsgString = Serial_in.readStringUntil('C');
+                MsgString.concat('C');
             }   
                 Serial_in.println(MsgString);
 
+*/
                 vTaskDelayUntil(&xLastWakeTime, xIntervel);
 
     }
@@ -261,8 +267,9 @@ void setup() {
         local_IP = IpAddressToString(WiFi.localIP());
     }
     Serial.begin(BAUDRATE);
-    Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,D10,D9); //RX  TX
-
+    //Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,10,9); //RX  TX
+    Serial_in.begin(BAUDRATE, SERIAL_8N1, RX, TX);
+    Serial_in.println("Serial_in setup OK");
 
 
     while (!Serial)
