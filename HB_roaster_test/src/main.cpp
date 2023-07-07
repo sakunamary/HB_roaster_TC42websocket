@@ -1,15 +1,13 @@
 #include <Arduino.h>
-#if defined(ESP8266)
-  #include <ESP8266WiFi.h>
-  #include <ESPAsyncTCP.h>
-#elif defined(ESP32)
-  #include <WiFi.h>
-  #include <AsyncTCP.h>
-#endif
 #include "config.h"
 #include "EEPROM.h"
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include <AsyncUDP.h>
 #include <ESPAsyncWebServer.h>
-#include <WebSerial.h>
+#include "Update.h"
+
+//#include <WebSerial.h>
 #include "SoftwareSerial.h"
 #include "ArduinoJson.h"
 #include "task_get_data.h"
@@ -21,23 +19,22 @@
 
 EspSoftwareSerial::UART Serial_in;// D10 RX_drumer  D9 TX_drumer 
 
-
 AsyncWebServer server(80);
 
 AsyncWebSocket ws("/websocket"); // access at ws://[esp ip]/
 
 char ap_name[30] ;
 uint8_t macAddr[6];
-String MsgString;
-String local_IP;
 
-const char* ssid = "esp_serial"; // Your WiFi SSID
-const char* password = "12345678"; // Your WiFi Password
+String local_IP;
+String MsgString;
+
 user_wifi_t user_wifi = {" ", " ", false};
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0};
 
+SemaphoreHandle_t xThermoDataMutex = NULL;
+TaskHandle_t xHandle_indicator;
 
-void  get_data();
 void notFound(AsyncWebServerRequest *request);    
 void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);//Handle WebSocket event
 void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){};
@@ -55,6 +52,16 @@ String IpAddressToString(const IPAddress &ipAddress)
 
 
 
+String processor(const String &var)
+{
+    Serial.println(var);
+  if (var == "version")
+    {
+        return VERSION;
+    }
+    
+    return String();
+}
 
 void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
 
@@ -154,44 +161,107 @@ void recvMsg(uint8_t *data, size_t len){
 */
 
 
-void  get_data() {
-
-//获取数据
-    Serial_in.print("CHAN;1300\n");
-    delay(20);
-    Serial_in.flush();
-
-    Serial_in.print("READ\n");
-    delay(20);
-       while (Serial_in.available()){
-        MsgString = Serial_in.readStringUntil('C');
-
-    }   
-
-    #if defined DEBUG_MODE
-    Serial.println("read from drummer:");
-    Serial.println(MsgString);
-    #endif 
-
-    Serial_in.print("CHAN;2400\n");
-    delay(20);
-    Serial_in.flush();
-
-    Serial_in.print("READ\n");
-    delay(20);
-       while (Serial_in.available()){
-        MsgString = Serial_in.readStringUntil('C');
-    }   
-        Serial_in.println(MsgString);
 
 
-}
+
+void task_get_data(void *pvParameters)
+{ //function 
+
+    /* Variable Definition */
+    (void)pvParameters;
+    TickType_t xLastWakeTime;
+
+    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+   //const TickType_t xIntervel = (2 * 1000) / portTICK_PERIOD_MS;
+    /* Task Setup and Initialize */
+    // Initial the xLastWakeTime variable with the current time.
+    xLastWakeTime = xTaskGetTickCount();
+
+    for (;;) // A Task shall never return or exit.
+    { //for loop
+        // Wait for the next cycle (intervel 750ms).
+        //获取数据
+            Serial_in.print("CHAN;1300\n");
+            delay(20);
+            Serial_in.flush();
+
+            Serial_in.print("READ\n");
+            delay(20);
+            while (Serial_in.available()){
+                MsgString = Serial_in.readStringUntil('C');
+
+            }   
+
+
+            Serial.println("read from drummer:");
+            Serial.println(MsgString);
+
+
+            Serial_in.print("CHAN;2400\n");
+            delay(20);
+            Serial_in.flush();
+
+            Serial_in.print("READ\n");
+            delay(20);
+            while (Serial_in.available()){
+                MsgString = Serial_in.readStringUntil('C');
+            }   
+                Serial_in.println(MsgString);
+
+                vTaskDelayUntil(&xLastWakeTime, xIntervel);
+
+    }
+}//function 
+
+
+
+
+
 
 void setup() {
 
     xThermoDataMutex = xSemaphoreCreateMutex();
+
+
+
+  //初始化网络服务
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(user_wifi.ssid, user_wifi.password);
+
+    byte tries = 0;
+    while (WiFi.status() != WL_CONNECTED)
+    {
+
+        delay(1000);
+        Serial.println("wifi not ready");
+
+        if (tries++ > 7)
+        {
+            WiFi.macAddress(macAddr); 
+            // Serial_debug.println("WiFi.mode(AP):");
+            WiFi.mode(WIFI_AP);
+            sprintf( ap_name ,"HB_WIFI_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
+            WiFi.softAP(ap_name, "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
+            break;
+        }
+        // show AP's IP
+    }
+
+
+    Serial.print("HB_WIFI's IP:");
+
+    if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
+    {
+        Serial.println(IpAddressToString(WiFi.softAPIP()));
+        local_IP = IpAddressToString(WiFi.softAPIP());
+    }
+    else
+    {
+        Serial.println(IpAddressToString(WiFi.localIP()));
+        local_IP = IpAddressToString(WiFi.localIP());
+    }
     Serial.begin(BAUDRATE);
-    Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,D10,D9) //RX  TX
+    Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,D10,D9); //RX  TX
 
 
 
@@ -243,44 +313,6 @@ Serial.printf("\nStart Task...\n");
     );
     Serial.printf("\nTASK2:send_data...\n");
 
-
-
-  //初始化网络服务
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(user_wifi.ssid, user_wifi.password);
-
-    byte tries = 0;
-    while (WiFi.status() != WL_CONNECTED)
-    {
-
-        delay(1000);
-        Serial.println("wifi not ready");
-
-        if (tries++ > 7)
-        {
-            WiFi.macAddress(macAddr); 
-            // Serial_debug.println("WiFi.mode(AP):");
-            WiFi.mode(WIFI_AP);
-            sprintf( ap_name ,"HB_WIFI_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
-            WiFi.softAP(ap_name, "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
-            break;
-        }
-        // show AP's IP
-    }
-
-
-    Serial.print("HB_WIFI's IP:");
-
-    if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
-    {
-        Serial.println(IpAddressToString(WiFi.softAPIP()));
-        local_IP = IpAddressToString(WiFi.softAPIP());
-    }
-    else
-    {
-        Serial.println(IpAddressToString(WiFi.localIP()));
-        local_IP = IpAddressToString(WiFi.localIP());
-    }
     // init websocket
     Serial.println("WebSocket started!");
     // attach AsyncWebSocket
