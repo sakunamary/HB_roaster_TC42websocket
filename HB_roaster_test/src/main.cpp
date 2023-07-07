@@ -190,17 +190,22 @@ void task_get_data(void *pvParameters)
 */
 
             StringTokenizer tokens(MsgString, ",");
-                while(tokens.hasNext()){
+            while(tokens.hasNext()){
                    MSG_token[i]=tokens.nextToken(); // prints the next token in the string
-                   Serial.println(MSG_token[i]);
+                  // Serial.println(MSG_token[i]);
                    i++;
                 }
+            if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
+                {//lock the  mutex       
+                    To_artisan.BT = MSG_token[2] ;
+                    To_artisan.ET = MSG_token[3] ;
+
+                        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+                }   
                 
             MsgString = "";
             i=0;
 
-
-/*
             Serial_in.print("CHAN;2400\n");
             delay(20);
             Serial_in.flush();
@@ -211,9 +216,28 @@ void task_get_data(void *pvParameters)
                 MsgString = Serial_in.readStringUntil('C');
                 MsgString.concat('C');
             }   
-                Serial_in.println(MsgString);
 
-*/
+             StringTokenizer tokens(MsgString, ",");
+            while(tokens.hasNext()){
+                   MSG_token[i]=tokens.nextToken(); // prints the next token in the string
+                  // Serial.println(MSG_token[i]);
+                   i++;
+                }
+            if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
+                {//lock the  mutex       
+                    To_artisan.ap = MSG_token[2] ;
+                    To_artisan.ET = MSG_token[3] ;
+
+                        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+                }   
+                
+            MsgString = "";
+            i=0;   
+
+
+
+
+
                 vTaskDelayUntil(&xLastWakeTime, xIntervel);
 
     }
