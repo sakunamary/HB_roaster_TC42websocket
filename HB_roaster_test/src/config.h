@@ -3,11 +3,15 @@
 #define __CONFIG_H__
 
 
+#include "config.h"
+#include <ESPAsyncWebServer.h>
+#include "SoftwareSerial.h"
 
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 #define BAUDRATE 115200  //serial port baudrate
 
 #define VERSION "1.0.0"
+
 
 
 // 网页设置的参数

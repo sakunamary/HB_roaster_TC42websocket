@@ -6,16 +6,21 @@
   #include <WiFi.h>
   #include <AsyncTCP.h>
 #endif
+#include "config.h"
+#include "EEPROM.h"
 #include <ESPAsyncWebServer.h>
 #include <WebSerial.h>
 #include "SoftwareSerial.h"
 #include "ArduinoJson.h"
+#include "task_get_data.h"
+#include "task_send_data.h"
+
+
 
 #define DEBUG_MODE
-#define BAUD 115200
 
+EspSoftwareSerial::UART Serial_in;// D10 RX_drumer  D9 TX_drumer 
 
-SoftwareSerial serial_in;// D1 RX_drumer  D2 TX_drumer 
 
 AsyncWebServer server(80);
 
@@ -152,14 +157,14 @@ void recvMsg(uint8_t *data, size_t len){
 void  get_data() {
 
 //获取数据
-    serial_in.print("CHAN;1300\n");
+    Serial_in.print("CHAN;1300\n");
     delay(20);
-    serial_in.flush();
+    Serial_in.flush();
 
-    serial_in.print("READ\n");
+    Serial_in.print("READ\n");
     delay(20);
-       while (serial_in.available()){
-        MsgString = serial_in.readStringUntil('C');
+       while (Serial_in.available()){
+        MsgString = Serial_in.readStringUntil('C');
 
     }   
 
@@ -168,16 +173,16 @@ void  get_data() {
     Serial.println(MsgString);
     #endif 
 
-    serial_in.print("CHAN;2400\n");
+    Serial_in.print("CHAN;2400\n");
     delay(20);
-    serial_in.flush();
+    Serial_in.flush();
 
-    serial_in.print("READ\n");
+    Serial_in.print("READ\n");
     delay(20);
-       while (serial_in.available()){
-        MsgString = serial_in.readStringUntil('C');
+       while (Serial_in.available()){
+        MsgString = Serial_in.readStringUntil('C');
     }   
-        serial_in.println(MsgString);
+        Serial_in.println(MsgString);
 
 
 }
@@ -186,6 +191,10 @@ void setup() {
 
     xThermoDataMutex = xSemaphoreCreateMutex();
     Serial.begin(BAUDRATE);
+    Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,D10,D9) //RX  TX
+
+
+
     while (!Serial)
     {
         ; // wait for serial port ready
@@ -342,8 +351,8 @@ Serial.printf("\nStart Task...\n");
                         }
   });         
 
-    server_OTA.onNotFound(notFound); // 404 page seems not necessary...
-    server_OTA.onFileUpload(onUpload);
+    server.onNotFound(notFound); // 404 page seems not necessary...
+    server.onFileUpload(onUpload);
 
   server.begin();
     Serial.println("HTTP server started");
