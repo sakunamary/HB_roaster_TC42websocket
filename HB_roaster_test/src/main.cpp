@@ -2,11 +2,6 @@
 #include "config.h"
 
 #include <Arduino.h>
-#if defined(ESP8266)
-  #include <ESP8266WiFi.h>
-  #include <ESPAsyncTCP.h>
-  
-
 //Wifi libs 
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
@@ -50,7 +45,6 @@ WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
 char ap_name[30] ;
 uint8_t macAddr[6];
 
-String local_IP;
 String MsgString;
 
 String MSG_token1300[4];
@@ -65,10 +59,6 @@ data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0};
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) ;
 void handlePortal();//处理设置网页处理模块
 void get_data();//获取锅炉串口信息。
-
-
-String IpAddressToString(const IPAddress &ipAddress);      
-
 
 
 String IpAddressToString(const IPAddress &ipAddress)
@@ -92,118 +82,105 @@ String processor(const String &var)
     return String();
 }
 
-void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
 
-     //    {"command": "getData", "id": 93609, "roasterID": 0}
-    // Artisan schickt Anfrage als TXT
-    // TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
 
-    TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+
+//Define Artisan Websocket events to exchange data
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+
+  //Artisan schickt Anfrage als TXT
+  //TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
 
     const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
     DynamicJsonDocument doc(capacity);
 
-    switch (type)
-    {
-    case WS_EVT_DISCONNECT:
-        Serial.printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
-        break;
-    case WS_EVT_CONNECT:
-        //client connected
-         Serial.printf("ws[%s][%u] connect\n", server->url(), client->id());
-         client->printf("Hello Client %u :", client->id());
-         client->ping();
-        break;
-    case WS_EVT_ERROR:
-        //error was received from the other end
-         Serial.printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
-        break;
-    case WS_EVT_PONG:
-        //pong message was received (in response to a ping request maybe)
-        Serial.printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");   
-        break;   
-    case WS_EVT_DATA:
-        AwsFrameInfo * info = (AwsFrameInfo*)arg;
-       if(info->final && info->index == 0 && info->len == len){
+   String temp_cmd_out = "" ;//from websockets recived drumer control command and send out ;
+    switch(type) {
+        case WStype_DISCONNECTED:
+            //Serial_debug.printf("[%u] Disconnected!\n", num);
+            break;
+        case WStype_CONNECTED:
+            {
+                IPAddress ip = webSocket.remoteIP(num);
+                //Serial_debug.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+        
+                // send message to client
+                webSocket.sendTXT(num, "Connected");
+            }
+            break;
+        case WStype_TEXT:
+            { 
+            //DEBUG WEBSOCKET
+            //Serial.printf("[%u] get Text: %s\n", num, payload);
 
-         Serial.printf("ws[%s][%u] %s-message[%llu]: ",server->url(), client->id(), (info->opcode == WS_TEXT)?"text":"binary", info->len);
+            //Extract Values lt. https://arduinojson.org/v6/example/http-client/
+            //Artisan Anleitung: https://artisan-scope.org/devices/websockets/
 
-            if(info->opcode == WS_TEXT){
-                    // Extract Values lt. https://arduinojson.org/v6/example/http-client/
-                    // Artisan Anleitung: https://artisan-scope.org/devices/websockets/
-                    deserializeJson(doc, (char *)data);
-                    // char* entspricht String
-                    String command = doc["command"].as<  const char *>();
-                    // Serial_debug.printf("Command received: %s \n",command);
-                    long ln_id = doc["id"].as<long>();
-                    // Send Values to Artisan over Websocket
-                    JsonObject root = doc.to<JsonObject>();
-                    JsonObject data = root.createNestedObject("data");
+            deserializeJson(doc, (char *)payload);
 
-                if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//给温度数组的最后一个数值写入数据   
+            //char* entspricht String
+            String command = doc["command"].as<char*>();
+             //Serial_debug.printf("Command received: %s \n",command);  
+            
+            long ln_id = doc["id"].as<long>();
 
-                    if (command == "getBT")
-                    {
-                        root["id"] = ln_id;
-                        data["BT"] = To_artisan.BT;
-                    }
-                    else if (command == "getET")
-                    {
-                        root["id"] = ln_id;
-                        data["ET"] = To_artisan.ET;
-                    }
-                    else if (command == "getData")
-                    {
-                        root["id"] = ln_id;
-                        data["BT"] = To_artisan.BT;
-                        data["ET"] = To_artisan.ET;
-                        data["AP"] = To_artisan.AP;
-                        data["inlet"] = To_artisan.inlet;                         
-                    }
-
-                    xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
-                } 
+            deserializeJson(doc, (char *)data);
+            // char* entspricht String
+            String command = doc["command"].as<  const char *>();
+            // Serial_debug.printf("Command received: %s \n",command);
+            long ln_id = doc["id"].as<long>();
+            // Send Values to Artisan over Websocket
+            JsonObject root = doc.to<JsonObject>();
+            JsonObject data = root.createNestedObject("data");
 
 
-                    char buffer[200];                        // create temp buffer 200
-                    size_t len = serializeJson(doc, buffer); // serialize to buffer
+            if (command == "getBT")
+            {
+                root["id"] = ln_id;
+                data["BT"] = To_artisan.BT;
+            }
+            else if (command == "getET")
+            {
+                root["id"] = ln_id;
+                data["ET"] = To_artisan.ET;
+            }
+            else if (command == "getData")
+            {
+                root["id"] = ln_id;
+                data["BT"] = To_artisan.BT;
+                data["ET"] = To_artisan.ET;
+                data["AP"] = To_artisan.AP;
+                data["inlet"] = To_artisan.inlet;                         
+            }
 
-                    Serial.println(buffer);
-                    client->text(buffer);
+        
+
+
+            char buffer[200];                        // create temp buffer 200
+            size_t len = serializeJson(doc, buffer); // serialize to buffer
+
+             webSocket.sendTXT(num, buffer);
+
                 }
-            }   
-    break;
+            break;
+        case WStype_BIN:
+           // Serial_debug.printf("[%u] get binary length: %u\n", num, length);
+            hexdump(payload, length);
+
+            // send message to client
+            // webSocket.sendBIN(num, payload, length);
+            break;
+            
     }
 }
 
 
 
-void notFound(AsyncWebServerRequest *request)
-{
-    request->send(404, "text/plain", "Opps....Not found");
-}
 
-
-
-void task_get_data(void *pvParameters)
+void task_get_data()
 { //function 
-
-    /* Variable Definition */
-    (void)pvParameters;
-    TickType_t xLastWakeTime;
-
-    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
-
-
-   //const TickType_t xIntervel = (2 * 1000) / portTICK_PERIOD_MS;
-    /* Task Setup and Initialize */
-    // Initial the xLastWakeTime variable with the current time.
-    xLastWakeTime = xTaskGetTickCount();
     int i = 0;
-    for (;;) // A Task shall never return or exit.
-    { //for loop
         // Wait for the next cycle (intervel 750ms).
 
          StringTokenizer tokens(MsgString, ",");
@@ -229,14 +206,10 @@ void task_get_data(void *pvParameters)
                   // Serial.println(MSG_token[i]);
                    i++;
                 }
-            if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
-
-                {//lock the  mutex    
+           
+  
                     To_artisan.BT = MSG_token1300[1].toFloat();
                     To_artisan.ET = MSG_token1300[2].toFloat();
-
-                        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
-                }   
                 
             MsgString = "";
             i=0;
@@ -258,37 +231,44 @@ void task_get_data(void *pvParameters)
                   // Serial.println(MSG_token[i]);
                    i++;
                 }
-            if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
-                {//lock the  mutex       
-                    To_artisan.inlet = MSG_token2400[1].toFloat() ;
-
-
-                        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
-                }   
+    
+                    To_artisan.inlet = MSG_token2400[1].toFloat() ; 
                 
             MsgString = "";
             i=0;   
 
-
-
-
-
-                vTaskDelayUntil(&xLastWakeTime, xIntervel);
-
-    }
 }//function 
 
 
 
+void handlePortal() {
 
+  if (server.method() == HTTP_POST) {
+
+    strncpy(user_wifi.ssid,     server.arg("ssid").c_str(),     sizeof(user_wifi.ssid) );
+    strncpy(user_wifi.password, server.arg("password").c_str(), sizeof(user_wifi.password) );
+
+    user_wifi.ssid[server.arg("ssid").length()] = user_wifi.password[server.arg("password").length()] = '\0';
+
+    EEPROM.put(0, user_wifi);
+    EEPROM.commit();
+
+    server.send(200,   "text/html",  "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Wifi Setup</title><style>*,::after,::before{box-sizing:border-box;}body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#f5f5f5;}.form-control{display:block;width:100%;height:calc(1.5em + .75rem + 2px);border:1px solid #ced4da;}button{border:1px solid transparent;color:#fff;background-color:#007bff;border-color:#007bff;padding:.5rem 1rem;font-size:1.25rem;line-height:1.5;border-radius:.3rem;width:100%}.form-signin{width:100%;max-width:400px;padding:15px;margin:auto;}h1,p{text-align: center}</style> </head> <body><main class='form-signin'> <h1>Wifi Setup</h1> <br/> <p>Your settings have been saved successfully!<br />Please restart the device.</p></main></body></html>" );
+  } else {
+
+    server.send(200,   "text/html", "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Wifi Setup</title> <style>*,::after,::before{box-sizing:border-box;}body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#f5f5f5;}.form-control{display:block;width:100%;height:calc(1.5em + .75rem + 2px);border:1px solid #ced4da;}button{cursor: pointer;border:1px solid transparent;color:#fff;background-color:#007bff;border-color:#007bff;padding:.5rem 1rem;font-size:1.25rem;line-height:1.5;border-radius:.3rem;width:100%}.form-signin{width:100%;max-width:400px;padding:15px;margin:auto;}h1{text-align: center}</style> </head> <body><main class='form-signin'> <form action='/' method='post'><h1 class=''>Wifi Setup</h1><br/><div class='form-floating'><label>SSID</label><input type='text' class='form-control' name='ssid'> </div><div class='form-floating'><br/><label>Password</label><input type='password' class='form-control' name='password'></div><br/><div class='form-floating'><label>PROCODE</label><input type='text' class='form-control' name='drum_prodc'></div><br/><br/><button type='submit'>Save</button><p style='text-align: right'><a href='https://www.mrdiy.ca' style='color: #32C5FF'>mrdiy.ca</a></p></form></main> </body></html>" );
+  }
+}
+
+TickTwo ticker_1s(task_get_data, 10000, 0, MILLIS); 
 
 
 void setup() {
 
-    xThermoDataMutex = xSemaphoreCreateMutex();
 
-
-
+    Serial.begin(BAUDRATE);
+Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX, RX, false, 256); 
+   
   //初始化网络服务
     WiFi.mode(WIFI_STA);
     WiFi.begin(user_wifi.ssid, user_wifi.password);
@@ -313,9 +293,10 @@ void setup() {
     }
 
 
-    Serial.begin(BAUDRATE);
+
+
     //Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,10,9); //RX  TX
-    Serial_in.begin(BAUDRATE, SERIAL_8N1, RX, TX);
+    //Serial_in.begin(BAUDRATE, SERIAL_8N1, RX, TX);
 
 
 
@@ -355,93 +336,7 @@ if (user_wifi.Init_mode)
         local_IP = IpAddressToString(WiFi.localIP());
     }
 
-Serial.printf("\nStart Task...\n");
-    /*---------- Task Definition ---------------------*/
-    // Setup tasks to run independently.
-    xTaskCreatePinnedToCore(
-        task_get_data, "get_data" // 测量电池电源数据，每分钟测量一次
-        ,
-        1024 // This stack size can be checked & adjusted by reading the Stack Highwater
-        ,
-        NULL, 1 // Priority, with 1 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-        ,
-        NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
-    );
-    Serial.printf("\nTASK1:get_data...\n");
 
-    // init websocket
-    Serial.println("WebSocket started!");
-    // attach AsyncWebSocket
-    ws.onEvent(onEvent);
-    server.addHandler(&ws);
-
-
-
-    // for index.html
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-                  { request->send_P(200, "text/html", index_html, processor); });
-
-    // get the value from index.html
-    server.on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
-                  {
-//get value form webpage      
-    strncpy(user_wifi.ssid,request->getParam("ssid")->value().c_str(), sizeof(user_wifi.ssid) );
-    strncpy(user_wifi.password,request->getParam("password")->value().c_str(), sizeof(user_wifi.password) );
-    user_wifi.ssid[request->getParam("ssid")->value().length()] = user_wifi.password[request->getParam("password")->value().length()] = '\0';  
-//Svae EEPROM 
-    EEPROM.put(0, user_wifi);
-    EEPROM.commit();
-//output wifi_sussce html;
-    request->send_P(200, "text/html", wifi_sussce_html); });
-
-
-  // upload a file to /upload
-  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
-    request->send(200);
-  }, onUpload);
-       // Simple Firmware Update Form
-  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
-                    {
-                    request->send(200, "text/html", update_html);
-                    });
-
-  server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
-                        //shouldReboot = !Update.hasError();
-                        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", (Update.hasError())?update_fail_html:update_OK_html);
-                        response->addHeader("Connection", "close");
-                        request->send(response);
-                        },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
-                        if(!index){
-                        vTaskSuspend(xHandle_indicator); //停止显示
-                        Serial.printf("Update Start: %s\n", filename.c_str());
-
-                        if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)){
-                            Update.printError(Serial);
-                        }
-                        }
-                        if(!Update.hasError()){
-                        if(Update.write(data, len) != len){
-                            Update.printError(Serial);
-                        }
-                        }
-                        if(final){
-                        if(Update.end(true)){
-                            Serial.printf("Update Success: %uB\n", index+len);
-                            Serial.printf("ESP32 will reboot after 3s \n");
-                            vTaskDelay(3000);
-                            ESP.restart();
-
-                        } else {
-                            Update.printError(Serial);
-                            Serial.printf("ESP32 will reboot after 3s \n");
-                            vTaskDelay(3000);
-                            ESP.restart();
-                        }
-                        }
-  });         
-
-    server.onNotFound(notFound); // 404 page seems not necessary...
-    server.onFileUpload(onUpload);
 
   server.begin();
   Serial.println("HTTP server started");
