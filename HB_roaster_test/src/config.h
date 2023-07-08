@@ -54,7 +54,7 @@ typedef struct  data_to_artisan {
 const char wifi_sussce_html[] PROGMEM = R"rawliteral(
 <!doctype html><html lang='cn'><head>
     <meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
-        <title>TC4-WB Wifi Setup</title>
+        <title>HB-WIFI 设置</title>
           <style>*,::after,::before{box-sizing:border-box;}
     body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';
     font-size:1rem;
@@ -83,7 +83,7 @@ const char wifi_sussce_html[] PROGMEM = R"rawliteral(
         </head> 
 <body>
     <main class='form-signin'> 
-        <h1>TC4-WB 设置成功</h1> <br/> 
+        <h1>HB—WIFI 设置成功</h1> <br/> 
         <p>
         请手动重启生效<br />
         如不成功请重复操作<br />
@@ -103,7 +103,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   }
 </script>
     <meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
-    <title>TC4-WB 设置</title>
+    <title>HB-WIFI 设置</title>
     <style>*,::after,::before{box-sizing:border-box;}
     body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';
     font-size:1rem;
@@ -136,7 +136,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 <body>
     <main class='form-signin'> 
         <form action='/get' method='get'>
-            <h1 class=''>TC4-WB 设置</h1>
+            <h1 class=''>HB-WIFI 设置</h1>
             <h2 class=''>1.WIFI 设置</h2>
             <div class='form-floating'>
             <label>SSID/WIFI名字</label>
@@ -154,37 +154,7 @@ const char index_html[] PROGMEM = R"rawliteral(
             <div align="center">
                 <button  type='submit'>保存</button>
             </div>
-            
-        </form>     
-        <form action='/compens' method='get'>                
-            <br/>
-            <br/>
-            <h2 class=''>2.电偶温度补偿设置</h2>
-            <div class='form-floating'>
-            <label>Bean Temp/豆温 (current: %bt_compens%) </label>
-            <input type='number' step = '0.01' max = '20' min='-20' class='form-control'  name='Btemp_fix'> 
-            </div>
-            <br/>
-            <div class='form-floating'>
-            <label>Env  Temp/炉温 (current:%et_compens%)</label>
-            <input type='number' step = '0.01' max = '20' min='-20' class='form-control' name='Etemp_fix'> 
-            </div>
-            <br/>
-            <div align="center">
-                <button  type='submit'onclick="submitMessage()">保存</button>
-            </div>
-            
-        </form> 
-        <form action='/other' method='get'>   
-            <br/>
-            <br/>
-            <div class='form-floating'>
-            <h2 class=''>3.杂项</h2>  
-            <label>温度采样时间 (current: %sampling_time%) s</label>
-            <input type='number' step = '0.5' max = '4' min='1' class='form-control'  name='sampling_time'>     
-            </div>
-             <br/>
-             <br/>
+        
             <div align="center">
                 <button type='submit'onclick="submitMessage()">保存</button>
             </div>
@@ -203,7 +173,7 @@ const char update_html[] PROGMEM = R"rawliteral(
 <!doctype html><html lang='cn'>
 <head>
     <meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
-    <title>TC4-WB Setup</title>
+    <title>HB-WIFI 设置</title>
     <style>*,::after,::before{box-sizing:border-box;}
     body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';
     font-size:1rem;

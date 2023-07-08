@@ -16,7 +16,7 @@
 //#include "SoftwareSerial.h"
 #include "ArduinoJson.h"
 //#include "task_get_data.h"
-#include "task_send_data.h"
+//#include "task_send_data.h"
 
 
 
@@ -48,7 +48,7 @@ TaskHandle_t xHandle_indicator;
 
 void notFound(AsyncWebServerRequest *request);    
 void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);//Handle WebSocket event
-void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){};
+void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){}
 String IpAddressToString(const IPAddress &ipAddress);      
 
 
@@ -83,7 +83,7 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
     TickType_t xLastWakeTime;
 
     const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
-    
+
     const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
     DynamicJsonDocument doc(capacity);
 
@@ -295,30 +295,19 @@ void setup() {
     }
 
 
-    Serial.print("HB_WIFI's IP:");
-
-    if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
-    {
-        Serial.println(IpAddressToString(WiFi.softAPIP()));
-        local_IP = IpAddressToString(WiFi.softAPIP());
-    }
-    else
-    {
-        Serial.println(IpAddressToString(WiFi.localIP()));
-        local_IP = IpAddressToString(WiFi.localIP());
-    }
     Serial.begin(BAUDRATE);
     //Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,10,9); //RX  TX
     Serial_in.begin(BAUDRATE, SERIAL_8N1, RX, TX);
-    Serial_in.println("Serial_in setup OK");
+
 
 
     while (!Serial)
     {
         ; // wait for serial port ready
     }
-   // serial_in.begin(115200,SWSERIAL_8N1,D1,D2 );  //RX D1 TX D2
+
     Serial.printf("\nTC4-WB  STARTING...\n");
+    Serial.printf("\nSerial_in setup OK\n");
     Serial.printf("\nRead data from EEPROM...\n");
     // set up eeprom data
     EEPROM.begin(sizeof(user_wifi));
@@ -335,6 +324,19 @@ if (user_wifi.Init_mode)
     EEPROM.commit();
 }
 
+    Serial.print("HB_WIFI's IP:");
+
+    if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
+    {
+        Serial.println(IpAddressToString(WiFi.softAPIP()));
+        local_IP = IpAddressToString(WiFi.softAPIP());
+    }
+    else
+    {
+        Serial.println(IpAddressToString(WiFi.localIP()));
+        local_IP = IpAddressToString(WiFi.localIP());
+    }
+
 Serial.printf("\nStart Task...\n");
     /*---------- Task Definition ---------------------*/
     // Setup tasks to run independently.
@@ -349,23 +351,12 @@ Serial.printf("\nStart Task...\n");
     );
     Serial.printf("\nTASK1:get_data...\n");
 
-    xTaskCreatePinnedToCore(
-        task_send_data,"send_data" // MAX6675 thermal task to read Bean-Temperature (BT)
-        ,
-        1024 // Stack size
-        ,
-        NULL, 3 // Priority
-        ,
-        NULL, 
-        1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
-    );
-    Serial.printf("\nTASK2:send_data...\n");
-
     // init websocket
     Serial.println("WebSocket started!");
     // attach AsyncWebSocket
     ws.onEvent(onEvent);
     server.addHandler(&ws);
+
 
 
     // for index.html
@@ -435,7 +426,7 @@ Serial.printf("\nStart Task...\n");
     server.onFileUpload(onUpload);
 
   server.begin();
-    Serial.println("HTTP server started");
+  Serial.println("HTTP server started");
 
 }
 
