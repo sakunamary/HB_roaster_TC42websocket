@@ -6,13 +6,16 @@
 #include <AsyncUDP.h>
 #include <ESPAsyncWebServer.h>
 #include "Update.h"
+
+
 #include <HardwareSerial.h>
 
+#include <StringTokenizer.h>
 //#include <WebSerial.h>
 //
 //#include "SoftwareSerial.h"
 #include "ArduinoJson.h"
-#include "task_get_data.h"
+//#include "task_get_data.h"
 #include "task_send_data.h"
 
 
@@ -20,7 +23,8 @@
 
 //SoftwareSerial Serial_in ;
 //spSoftwareSerial::UART Serial_in;// D10 RX_drumer  D9 TX_drumer 
-
+ HardwareSerial Serial_in(1);
+SemaphoreHandle_t xThermoDataMutex = NULL;
 
 AsyncWebServer server(80);
 
@@ -30,7 +34,10 @@ char ap_name[30] ;
 uint8_t macAddr[6];
 
 String local_IP;
+String MsgString;
 
+String MSG_token1300[4];
+String MSG_token2400[4];
 
 
 user_wifi_t user_wifi = {" ", " ", false};
@@ -73,6 +80,10 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
     // Artisan schickt Anfrage als TXT
     // TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
 
+    TickType_t xLastWakeTime;
+
+    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+    
     const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
     DynamicJsonDocument doc(capacity);
 
@@ -112,6 +123,9 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                     // Send Values to Artisan over Websocket
                     JsonObject root = doc.to<JsonObject>();
                     JsonObject data = root.createNestedObject("data");
+
+                if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//给温度数组的最后一个数值写入数据   
+
                     if (command == "getBT")
                     {
                         root["id"] = ln_id;
@@ -122,16 +136,18 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                         root["id"] = ln_id;
                         data["ET"] = To_artisan.ET;
                     }
-
                     else if (command == "getData")
                     {
                         root["id"] = ln_id;
                         data["BT"] = To_artisan.BT;
+                        data["ET"] = To_artisan.ET;
                         data["AP"] = To_artisan.AP;
                         data["inlet"] = To_artisan.inlet;                         
- 
-
                     }
+
+                    xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+                } 
+
 
                     char buffer[200];                        // create temp buffer 200
                     size_t len = serializeJson(doc, buffer); // serialize to buffer
@@ -150,6 +166,99 @@ void notFound(AsyncWebServerRequest *request)
 {
     request->send(404, "text/plain", "Opps....Not found");
 }
+
+
+
+void task_get_data(void *pvParameters)
+{ //function 
+
+    /* Variable Definition */
+    (void)pvParameters;
+    TickType_t xLastWakeTime;
+
+    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+
+
+   //const TickType_t xIntervel = (2 * 1000) / portTICK_PERIOD_MS;
+    /* Task Setup and Initialize */
+    // Initial the xLastWakeTime variable with the current time.
+    xLastWakeTime = xTaskGetTickCount();
+    int i = 0;
+    for (;;) // A Task shall never return or exit.
+    { //for loop
+        // Wait for the next cycle (intervel 750ms).
+
+         StringTokenizer tokens(MsgString, ",");
+        //获取数据
+            Serial_in.print("CHAN;1300\n");
+            delay(20);
+            Serial_in.flush();
+
+            Serial_in.print("READ\n");
+            delay(20);
+            if(Serial_in.available()>0){
+                MsgString = Serial_in.readStringUntil('C');
+                MsgString.concat('C');
+            } 
+/*
+            Serial.println("read from drummer:");
+            Serial.println(MsgString);
+*/
+
+
+            while(tokens.hasNext()){
+                   MSG_token1300[i]=tokens.nextToken(); // prints the next token in the string
+                  // Serial.println(MSG_token[i]);
+                   i++;
+                }
+            if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
+
+                {//lock the  mutex    
+                    To_artisan.BT = MSG_token1300[1].toFloat();
+                    To_artisan.ET = MSG_token1300[2].toFloat();
+
+                        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+                }   
+                
+            MsgString = "";
+            i=0;
+
+            Serial_in.print("CHAN;2400\n");
+            delay(20);
+            Serial_in.flush();
+
+            Serial_in.print("READ\n");
+            delay(20);
+            if(Serial_in.available()>0){
+                MsgString = Serial_in.readStringUntil('C');
+                MsgString.concat('C');
+            }   
+
+
+            while(tokens.hasNext()){
+                   MSG_token2400[i]=tokens.nextToken(); // prints the next token in the string
+                  // Serial.println(MSG_token[i]);
+                   i++;
+                }
+            if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
+                {//lock the  mutex       
+                    To_artisan.inlet = MSG_token2400[1].toFloat() ;
+
+
+                        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+                }   
+                
+            MsgString = "";
+            i=0;   
+
+
+
+
+
+                vTaskDelayUntil(&xLastWakeTime, xIntervel);
+
+    }
+}//function 
 
 
 
