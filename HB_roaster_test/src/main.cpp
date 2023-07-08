@@ -21,7 +21,6 @@
 //SoftwareSerial Serial_in ;
 //spSoftwareSerial::UART Serial_in;// D10 RX_drumer  D9 TX_drumer 
 
-HardwareSerial Serial_in(1);
 
 AsyncWebServer server(80);
 
@@ -37,7 +36,7 @@ String local_IP;
 user_wifi_t user_wifi = {" ", " ", false};
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0};
 
-SemaphoreHandle_t xThermoDataMutex = NULL;
+
 TaskHandle_t xHandle_indicator;
 
 void notFound(AsyncWebServerRequest *request);    

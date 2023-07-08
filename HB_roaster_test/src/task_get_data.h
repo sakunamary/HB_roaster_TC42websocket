@@ -4,12 +4,15 @@
 
 
 #include <Arduino.h>
+#include <HardwareSerial.h>
+
 #include <StringTokenizer.h>
 
 String MSG_token[4];
 String MsgString;
 
- 
+ HardwareSerial Serial_in(1);
+SemaphoreHandle_t xThermoDataMutex = NULL;
 
 void task_get_data(void *pvParameters)
 { //function 
@@ -29,6 +32,8 @@ void task_get_data(void *pvParameters)
     for (;;) // A Task shall never return or exit.
     { //for loop
         // Wait for the next cycle (intervel 750ms).
+
+         StringTokenizer tokens(MsgString, ",");
         //获取数据
             Serial_in.print("CHAN;1300\n");
             delay(20);
@@ -45,7 +50,7 @@ void task_get_data(void *pvParameters)
             Serial.println(MsgString);
 */
 
-            StringTokenizer tokens(MsgString, ",");
+
             while(tokens.hasNext()){
                    MSG_token[i]=tokens.nextToken(); // prints the next token in the string
                   // Serial.println(MSG_token[i]);
@@ -73,7 +78,7 @@ void task_get_data(void *pvParameters)
                 MsgString.concat('C');
             }   
 
-             StringTokenizer tokens(MsgString, ",");
+
             while(tokens.hasNext()){
                    MSG_token[i]=tokens.nextToken(); // prints the next token in the string
                   // Serial.println(MSG_token[i]);
@@ -81,7 +86,7 @@ void task_get_data(void *pvParameters)
                 }
             if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
                 {//lock the  mutex       
-                    To_artisan.ap = MSG_token[2] ;
+                    To_artisan.AP = MSG_token[2] ;
                     To_artisan.ET = MSG_token[3] ;
 
                         xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
