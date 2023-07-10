@@ -79,7 +79,7 @@ String processor(const String &var)
 
 //Define Artisan Websocket events to exchange data
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
-
+//    {"command": "getData", "id": 93609, "roasterID": 0}
   //Artisan schickt Anfrage als TXT
   //TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
 
@@ -192,7 +192,7 @@ void task_get_data()
             Serial.flush();
 
             Serial.print("READ\n");
-            delay(20);
+            delay(50);
             if(Serial.available()>0){
                 MsgString = Serial.readStringUntil('C');
                 MsgString.concat('C');
@@ -221,7 +221,7 @@ void task_get_data()
             Serial.flush();
 
             Serial.print("READ\n");
-            delay(20);
+            delay(50);
             if(Serial.available()>0){
                 MsgString = Serial.readStringUntil('C');
                 MsgString.concat('C');
@@ -262,7 +262,7 @@ void handlePortal() {
   }
 }
 
-TickTwo ticker_1s(task_get_data, 10000, 0, MILLIS); 
+TickTwo ticker_1s(task_get_data, 1000, 0, MILLIS); 
 
 
 void setup() {
@@ -292,13 +292,6 @@ Serial.begin(BAUDRATE);
         }
         // show AP's IP
     }
-
-
-
-
-    //Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,10,9); //RX  TX
-    //Serial_in.begin(BAUDRATE, SERIAL_8N1, RX, TX);
-
 
 
     while (!Serial)
