@@ -23,6 +23,7 @@
 
 //Ticker to execute actions at defined intervals
 #include "TickTwo.h" //ESP8266 compatible version of Ticker by sstaub
+#include "DFRobot_AHT20.h"
 
 
 //串口初始化
@@ -32,6 +33,8 @@
 
 ESP8266WebServer    server(80); //构建webserver类
 WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
+DFRobot_AHT20 aht20;//构建aht20 类
+
 
 char ap_name[30] ;
 uint8_t macAddr[6];
@@ -43,14 +46,14 @@ String MSG_token2400[4];
 
 
 user_wifi_t user_wifi = {" ", " ", false};
-data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0};
+data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0.0,0.0};
 
 
 //functions declear for PlatfromIO rules
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) ;
 void handlePortal();//处理设置网页处理模块
 void get_data();//获取锅炉串口信息。
-
+void get_env_samples();//获取环境变量函数 ，每两分钟查询一次数值再写入 To_artisan （已完成）
 
 String IpAddressToString(const IPAddress &ipAddress)
 {
@@ -153,7 +156,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
                 data["inlet"] = To_artisan.inlet;                         
             }
 
-    
+            else if (command == "getEnv")
+            {
+                root["id"] = ln_id;
+                data["TEMP"] = To_artisan.temp_env;
+                data["HUMI"] = To_artisan.humi_env;
+                    
+            }
 
             char buffer[200];                        // create temp buffer 200
             size_t len = serializeJson(doc, buffer); // serialize to buffer
@@ -178,6 +187,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
 }
 
 
+void get_env_samples(){//获取环境变量函数
+
+ if(aht20.startMeasurementReady(/* crcEn = */true)){
+  To_artisan.temp_env= aht20.getTemperature_C();
+  To_artisan.humi_env =aht20.getHumidity_RH();
+  }
+    
+
+}// end of 获取环境变量函数
 
 
 void task_get_data()
@@ -264,9 +282,15 @@ void handlePortal() {
 }
 
 TickTwo ticker_1s(task_get_data, 1000, 0, MILLIS); 
-
+TickTwo ticker_3mins(task_get_data, 180*1000, 0, MILLIS); 
 
 void setup() {
+
+//init env_data 初始化环境参数
+uint8_t AHT_status;
+
+aht20.begin();//初始化 AHT20
+get_env_samples();// init enveriment data getting.首次环境获取数据
 
 Serial.begin(BAUDRATE);
 //Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX, RX, false, 256); 
@@ -343,6 +367,7 @@ if (user_wifi.Init_mode)
   webSocket.onEvent(webSocketEvent);
 
   ticker_1s.start();
+  ticker_3mins.start();
 
 
 
@@ -352,5 +377,6 @@ void loop() {
     webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
     ticker_1s.update(); 
+    ticker_3mins.update();
 
 }

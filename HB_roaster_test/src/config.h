@@ -32,6 +32,8 @@ typedef struct  data_to_artisan {
     double ET;
     double  AP;
     double inlet;
+    double temp_env;
+    double humi_env;
 /*
             AT = float(res1300[0])
             ET = float(res1300[1])
