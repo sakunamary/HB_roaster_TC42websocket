@@ -183,9 +183,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
 void task_get_data()
 { //function 
     int i = 0;
-        // Wait for the next cycle (intervel 750ms).
-
-         StringTokenizer tokens(MsgString, ",");
+        // Wait for the next cycle (intervel 750ms).123
         //获取数据
             Serial.print("CHAN;1300\n");
             delay(20);
@@ -197,21 +195,23 @@ void task_get_data()
                 MsgString = Serial.readStringUntil('C');
                 MsgString.concat('C');
             } 
-/*
-            Serial.println("read from drummer:");
-            Serial.println(MsgString);
-*/
+
+            //Serial.println("read from drummer:");
+            //Serial.println(MsgString);
 
 
+         StringTokenizer tokens(MsgString, ",");
             while(tokens.hasNext()){
                    MSG_token1300[i]=tokens.nextToken(); // prints the next token in the string
-                  // Serial.println(MSG_token[i]);
+                   //Serial.println(MSG_token1300[i]);
                    i++;
                 }
            
   
-                    To_artisan.BT = MSG_token1300[1].toFloat();
-                    To_artisan.ET = MSG_token1300[2].toFloat();
+                    To_artisan.BT = MSG_token1300[1].toDouble();
+                    To_artisan.ET = MSG_token1300[2].toDouble();
+
+                    Serial.printf("\nBT:%f,ET:%f",To_artisan.BT,To_artisan.ET);
                 
             MsgString = "";
             i=0;
@@ -230,11 +230,12 @@ void task_get_data()
 
             while(tokens.hasNext()){
                    MSG_token2400[i]=tokens.nextToken(); // prints the next token in the string
-                  // Serial.println(MSG_token[i]);
+                   Serial.println(MSG_token2400[i]);
                    i++;
                 }
     
-                    To_artisan.inlet = MSG_token2400[1].toFloat() ; 
+                    To_artisan.inlet = MSG_token2400[1].toDouble() ; 
+                    Serial.printf("\ninlet:%f",To_artisan.inlet);
                 
             MsgString = "";
             i=0;   
