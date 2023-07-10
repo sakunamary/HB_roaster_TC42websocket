@@ -1,7 +1,5 @@
 #include <Arduino.h>
 #include "config.h"
-
-#include <Arduino.h>
 //Wifi libs 
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
@@ -13,8 +11,7 @@
 
 
 #include <HardwareSerial.h>
-#include "SoftwareSerial.h"
-
+//#include <SoftwareSerial.h>
 #include <StringTokenizer.h>
 
 
@@ -28,15 +25,9 @@
 #include "TickTwo.h" //ESP8266 compatible version of Ticker by sstaub
 
 
-
-
-//SoftwareSerial Serial_in ;
-//spSoftwareSerial::UART Serial_in;// D10 RX_drumer  D9 TX_drumer 
-
-
 //串口初始化
 
-SoftwareSerial Serial_in;// D0 IO16 RX_drumer  D5 IO14 TX_drumer
+//SoftwareSerial Serial_in;// D0 IO16 RX_drumer  D5 IO14 TX_drumer
 
 
 ESP8266WebServer    server(80); //构建webserver类
@@ -46,7 +37,7 @@ char ap_name[30] ;
 uint8_t macAddr[6];
 
 String MsgString;
-
+String local_IP;
 String MSG_token1300[4];
 String MSG_token2400[4];
 
@@ -87,7 +78,7 @@ String processor(const String &var)
 
 
 //Define Artisan Websocket events to exchange data
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
 
   //Artisan schickt Anfrage als TXT
   //TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
@@ -95,15 +86,28 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
     const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
     DynamicJsonDocument doc(capacity);
 
-   String temp_cmd_out = "" ;//from websockets recived drumer control command and send out ;
     switch(type) {
+/*
+    WStype_ERROR,
+    WStype_DISCONNECTED, ok
+    WStype_CONNECTED, ok
+    WStype_TEXT, ok
+    WStype_BIN, ok
+    WStype_FRAGMENT_TEXT_START,
+    WStype_FRAGMENT_BIN_START,
+    WStype_FRAGMENT,
+    WStype_FRAGMENT_FIN,
+    WStype_PING,
+    WStype_PONG,
+*/
+
         case WStype_DISCONNECTED:
             //Serial_debug.printf("[%u] Disconnected!\n", num);
             break;
         case WStype_CONNECTED:
             {
                 IPAddress ip = webSocket.remoteIP(num);
-                //Serial_debug.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+                Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
         
                 // send message to client
                 webSocket.sendTXT(num, "Connected");
@@ -117,19 +121,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             //Extract Values lt. https://arduinojson.org/v6/example/http-client/
             //Artisan Anleitung: https://artisan-scope.org/devices/websockets/
 
-            deserializeJson(doc, (char *)payload);
+            deserializeJson(doc, (char *)data);
 
             //char* entspricht String
-            String command = doc["command"].as<char*>();
+            String command = doc["command"].as< const  char*>();
              //Serial_debug.printf("Command received: %s \n",command);  
             
             long ln_id = doc["id"].as<long>();
-
-            deserializeJson(doc, (char *)data);
-            // char* entspricht String
-            String command = doc["command"].as<  const char *>();
-            // Serial_debug.printf("Command received: %s \n",command);
-            long ln_id = doc["id"].as<long>();
+    
             // Send Values to Artisan over Websocket
             JsonObject root = doc.to<JsonObject>();
             JsonObject data = root.createNestedObject("data");
@@ -154,8 +153,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
                 data["inlet"] = To_artisan.inlet;                         
             }
 
-        
-
+    
 
             char buffer[200];                        // create temp buffer 200
             size_t len = serializeJson(doc, buffer); // serialize to buffer
@@ -166,10 +164,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             break;
         case WStype_BIN:
            // Serial_debug.printf("[%u] get binary length: %u\n", num, length);
-            hexdump(payload, length);
+            hexdump(data, len);
 
             // send message to client
             // webSocket.sendBIN(num, payload, length);
+            break;
+        case WStype_PING:
+        IPAddress ip = webSocket.remoteIP(num);
+        Serial.printf("[%u] PING from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
             break;
             
     }
@@ -185,14 +187,14 @@ void task_get_data()
 
          StringTokenizer tokens(MsgString, ",");
         //获取数据
-            Serial_in.print("CHAN;1300\n");
+            Serial.print("CHAN;1300\n");
             delay(20);
-            Serial_in.flush();
+            Serial.flush();
 
-            Serial_in.print("READ\n");
+            Serial.print("READ\n");
             delay(20);
-            if(Serial_in.available()>0){
-                MsgString = Serial_in.readStringUntil('C');
+            if(Serial.available()>0){
+                MsgString = Serial.readStringUntil('C');
                 MsgString.concat('C');
             } 
 /*
@@ -214,14 +216,14 @@ void task_get_data()
             MsgString = "";
             i=0;
 
-            Serial_in.print("CHAN;2400\n");
+            Serial.print("CHAN;2400\n");
             delay(20);
-            Serial_in.flush();
+            Serial.flush();
 
-            Serial_in.print("READ\n");
+            Serial.print("READ\n");
             delay(20);
-            if(Serial_in.available()>0){
-                MsgString = Serial_in.readStringUntil('C');
+            if(Serial.available()>0){
+                MsgString = Serial.readStringUntil('C');
                 MsgString.concat('C');
             }   
 
@@ -265,9 +267,8 @@ TickTwo ticker_1s(task_get_data, 10000, 0, MILLIS);
 
 void setup() {
 
-
-    Serial.begin(BAUDRATE);
-Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX, RX, false, 256); 
+Serial.begin(BAUDRATE);
+//Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX, RX, false, 256); 
    
   //初始化网络服务
     WiFi.mode(WIFI_STA);
@@ -337,13 +338,25 @@ if (user_wifi.Init_mode)
     }
 
 
-
+  server.on("/",  handlePortal);
   server.begin();
+
+  webSocket.begin();
   Serial.println("HTTP server started");
+
+
+    // event handler
+  webSocket.onEvent(webSocketEvent);
+
+  ticker_1s.start();
+
+
 
 }
 
 void loop() {
-
+    webSocket.loop();  //处理websocketmie
+    server.handleClient();//处理网页
+    ticker_1s.update(); 
 
 }
