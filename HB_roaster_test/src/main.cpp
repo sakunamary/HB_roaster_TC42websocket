@@ -6,12 +6,6 @@
 #include <EEPROM.h>
 
 
-#include "EEPROM.h"
-
-
-
-#include <HardwareSerial.h>
-//#include <SoftwareSerial.h>
 #include <StringTokenizer.h>
 
 
@@ -171,6 +165,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
 
                 }
             break;
+        /*    
         case WStype_BIN:
            // Serial_debug.printf("[%u] get binary length: %u\n", num, length);
             hexdump(data, len);
@@ -178,6 +173,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
             // send message to client
             // webSocket.sendBIN(num, payload, length);
             break;
+
+        */
         case WStype_PING:
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] PING from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
@@ -282,12 +279,12 @@ void handlePortal() {
 }
 
 TickTwo ticker_1s(task_get_data, 1000, 0, MILLIS); 
-TickTwo ticker_3mins(task_get_data, 180*1000, 0, MILLIS); 
+TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 void setup() {
 
 //init env_data 初始化环境参数
-uint8_t AHT_status;
+//uint8_t AHT_status;
 
 aht20.begin();//初始化 AHT20
 get_env_samples();// init enveriment data getting.首次环境获取数据
