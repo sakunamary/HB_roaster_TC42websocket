@@ -4,10 +4,11 @@
 #define __CONFIG_H__
 
 
-
-
-#define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 #define BAUDRATE 115200  //serial port baudrate
+
+
+#define TX_IN  D6
+#define RX_IN  D5
 
 #define VERSION "1.0.3"
 

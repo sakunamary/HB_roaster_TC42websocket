@@ -8,7 +8,7 @@
 
 #include <StringTokenizer.h>
 
-// #include "SoftwareSerial.h"
+ #include "SoftwareSerial.h"
 
 #include "ArduinoJson.h"
 //Websockets Lib by links2004
@@ -23,6 +23,7 @@
 ESP8266WebServer    server(80); //构建webserver类
 WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
 DFRobot_AHT20 aht20;//构建aht20 类
+SoftwareSerial Serial_in ;
 
 
 char ap_name[30] ;
@@ -34,6 +35,7 @@ String MsgString_2400;
 String local_IP;
 String MSG_token1300[4];
 String MSG_token2400[4];
+
 
 
 user_wifi_t user_wifi = {" ", " ", false};
@@ -194,23 +196,26 @@ void get_env_samples(){//获取环境变量函数
 void task_get_data_1300()
 { //function 
     int i = 0;
-
+        Serial.println("task_get_data_1300 run");
         // Wait for the next cycle (intervel 750ms)
         //获取数据
-            Serial.print("CHAN;1300\n");
-            delay(20);
-            Serial.flush();
+            Serial.println("send chan;1300");
+            Serial_in.println("CHAN;1300\n");
+            delay(200);
+            Serial_in.flush();
+            Serial.println("send read");
+            Serial_in.println("READ\n");
 
-            Serial.print("READ\n");
-            delay(50);
-            if(Serial.available()>0){
+            delay(200);
+            
+            if(Serial_in.available()>0){
                 MsgString_1300 = Serial.readStringUntil('C');
                 MsgString_1300.concat('C');
+
             } 
 
-            //Serial.println("read from drummer:");
-            //Serial.println(MsgString);
-
+                Serial.println("\ncmd1300 data:");
+                Serial.println(MsgString_1300);
         StringTokenizer tokens1300(MsgString_1300, ",");
 
             while(tokens1300.hasNext()){
@@ -228,19 +233,20 @@ void task_get_data_1300()
 
 void task_get_data_2400(){
         int j = 0 ;
-
-            Serial.print("CHAN;2400\n");
+        //Serial.println("task_get_data_2400 run");
+            Serial_in.println("CHAN;2400");
             delay(20);
-            Serial.flush();
+            Serial_in.flush();
 
-            Serial.print("READ\n");
+            Serial_in.print("READ\n");
             delay(50);
-            if(Serial.available()>0){
+            if(Serial_in.available()>0){
                 MsgString_2400 = Serial.readStringUntil('C');
                 MsgString_2400.concat('C');
+
+            }  
                 //Serial.printf("\ncmd2400 get:");
-                //erial.println(MsgString_2400);
-            }   
+                //Serial.println(MsgString_2400); 
 
         StringTokenizer tokens2400(MsgString_2400, ",");
             while(tokens2400.hasNext()){
@@ -281,8 +287,8 @@ void handlePortal() {
   }
 }
 
-TickTwo ticker_task_1300_500ms(task_get_data_1300, 500, 0, MILLIS); 
-TickTwo ticker_task_2400_500ms(task_get_data_2400, 500, 0, MILLIS); 
+TickTwo ticker_task_1300_500ms(task_get_data_1300, 1000, 0, MILLIS); 
+TickTwo ticker_task_2400_500ms(task_get_data_2400, 1000, 0, MILLIS); 
 TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 void setup() {
@@ -294,8 +300,8 @@ aht20.begin();//初始化 AHT20
 get_env_samples();// init enveriment data getting.首次环境获取数据
 
 Serial.begin(BAUDRATE);
-//Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX, RX, false, 256); 
-   
+Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 256); 
+
   //初始化网络服务
     WiFi.mode(WIFI_STA);
     WiFi.begin(user_wifi.ssid, user_wifi.password);
@@ -325,10 +331,17 @@ Serial.begin(BAUDRATE);
         ; // wait for serial port ready
     }
 
-  // Serial.printf("\nTC4-WB  STARTING...\n");
-   // Serial.printf("\nSerial_in setup OK\n");
-   // Serial.printf("\nRead data from EEPROM...\n");
-    // set up eeprom data
+       
+while (!Serial_in){
+    Serial.println("software serial not ready");
+    delay(1000);
+}
+
+
+  Serial.printf("\nTC4-WB  STARTING...\n");
+   Serial.printf("\nSerial_in setup OK\n");
+   Serial.printf("\nRead data from EEPROM...\n");
+// set up eeprom data
     EEPROM.begin(sizeof(user_wifi));
     EEPROM.get(0, user_wifi);
 
@@ -361,7 +374,7 @@ if (user_wifi.Init_mode)
   server.begin();
 
   webSocket.begin();
- // Serial.println("HTTP server started");
+  Serial.println("HTTP server started");
 
 
     // event handler

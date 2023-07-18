@@ -8,6 +8,7 @@
         "unordered_map": "cpp",
         "vector": "cpp",
         "initializer_list": "cpp",
-        "ranges": "cpp"
+        "ranges": "cpp",
+        "regex": "cpp"
     }
 }
