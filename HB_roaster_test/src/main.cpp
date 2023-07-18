@@ -8,6 +8,7 @@
 
 #include <StringTokenizer.h>
 
+// #include "SoftwareSerial.h"
 
 #include "ArduinoJson.h"
 //Websockets Lib by links2004
@@ -27,7 +28,9 @@ DFRobot_AHT20 aht20;//构建aht20 类
 char ap_name[30] ;
 uint8_t macAddr[6];
 
-String MsgString;
+String MsgString_1300;
+String MsgString_2400;
+
 String local_IP;
 String MSG_token1300[4];
 String MSG_token2400[4];
@@ -40,7 +43,8 @@ data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0.0,0.0};
 //functions declear for PlatfromIO rules
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) ;
 void handlePortal();//处理设置网页处理模块
-void get_data();//获取锅炉串口信息。
+void task_get_data_1300();//获取锅炉串口信息。
+void task_get_data_2400();
 void get_env_samples();//获取环境变量函数 ，每两分钟查询一次数值再写入 To_artisan （已完成）
 
 String IpAddressToString(const IPAddress &ipAddress)
@@ -131,14 +135,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
                 root["id"] = ln_id;
                 data["ET"] = To_artisan.ET;
             }
-            else if (command == "getData")
-            {
-                root["id"] = ln_id;
-                data["BT"] = To_artisan.BT;
-                data["ET"] = To_artisan.ET;
-                data["AP"] = To_artisan.AP;
-                data["inlet"] = To_artisan.inlet;                         
-            }
 
             else if (command == "getEnv")
             {
@@ -148,6 +144,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
                     
             }
 
+            else if (command == "getData")
+            {
+                root["id"] = ln_id;
+                data["BT"] = To_artisan.BT;
+                data["ET"] = To_artisan.ET;
+                data["AP"] = To_artisan.AP ;
+                data["inlet"] = To_artisan.inlet;                         
+            }
+
+
             char buffer[200];                        // create temp buffer 200
             size_t len = serializeJson(doc, buffer); // serialize to buffer
 
@@ -155,7 +161,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
 
                 }
             break;
-           
+        /*  
         case WStype_BIN:
            // Serial_debug.printf("[%u] get binary length: %u\n", num, length);
             hexdump(data, len);
@@ -163,7 +169,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
             // send message to client
             // webSocket.sendBIN(num, payload, length);
             break;
-
+*/ 
         
         case WStype_PING:
         IPAddress ip = webSocket.remoteIP(num);
@@ -177,7 +183,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
 void get_env_samples(){//获取环境变量函数
 
  if(aht20.startMeasurementReady(/* crcEn = */true)){
-  To_artisan.temp_env= aht20.getTemperature_C();
+  To_artisan.temp_env = aht20.getTemperature_C();
   To_artisan.humi_env =aht20.getHumidity_RH();
   }
     
@@ -185,10 +191,11 @@ void get_env_samples(){//获取环境变量函数
 }// end of 获取环境变量函数
 
 
-void task_get_data()
+void task_get_data_1300()
 { //function 
     int i = 0;
-        // Wait for the next cycle (intervel 750ms).123
+
+        // Wait for the next cycle (intervel 750ms)
         //获取数据
             Serial.print("CHAN;1300\n");
             delay(20);
@@ -197,28 +204,31 @@ void task_get_data()
             Serial.print("READ\n");
             delay(50);
             if(Serial.available()>0){
-                MsgString = Serial.readStringUntil('C');
-                MsgString.concat('C');
+                MsgString_1300 = Serial.readStringUntil('C');
+                MsgString_1300.concat('C');
             } 
 
             //Serial.println("read from drummer:");
             //Serial.println(MsgString);
 
+        StringTokenizer tokens1300(MsgString_1300, ",");
 
-         StringTokenizer tokens(MsgString, ",");
-            while(tokens.hasNext()){
-                   MSG_token1300[i]=tokens.nextToken(); // prints the next token in the string
+            while(tokens1300.hasNext()){
+                   MSG_token1300[i]=tokens1300.nextToken(); // prints the next token in the string
                    //Serial.println(MSG_token1300[i]);
                    i++;
                 }
         
                     To_artisan.BT = MSG_token1300[1].toDouble();
                     To_artisan.ET = MSG_token1300[2].toDouble();
-                    Serial.printf("\nBT:%4.2f,ET:%4.2f",To_artisan.BT,To_artisan.ET);
-                
-            MsgString = "";
-            i=0;
-            delay(200);
+                   // Serial.printf("\nBT:%4.2f,ET:%4.2f",To_artisan.BT,To_artisan.ET);
+                    MsgString_1300 = "";    
+                    i=0;    
+}
+
+void task_get_data_2400(){
+        int j = 0 ;
+
             Serial.print("CHAN;2400\n");
             delay(20);
             Serial.flush();
@@ -226,22 +236,27 @@ void task_get_data()
             Serial.print("READ\n");
             delay(50);
             if(Serial.available()>0){
-                MsgString = Serial.readStringUntil('C');
-                MsgString.concat('C');
+                MsgString_2400 = Serial.readStringUntil('C');
+                MsgString_2400.concat('C');
+                //Serial.printf("\ncmd2400 get:");
+                //erial.println(MsgString_2400);
             }   
 
-
-            while(tokens.hasNext()){
-                   MSG_token2400[i]=tokens.nextToken(); // prints the next token in the string
-                   Serial.println(MSG_token2400[i]);
-                   i++;
+        StringTokenizer tokens2400(MsgString_2400, ",");
+            while(tokens2400.hasNext()){
+                   MSG_token2400[j]=tokens2400.nextToken(); // prints the next token in the string
+                   //Serial.println(MSG_token2400[i]);
+                   j++;
                 }
     
                     To_artisan.inlet = MSG_token2400[1].toDouble() ; 
-                    Serial.printf("\ninlet:%f",To_artisan.inlet);
+                    To_artisan.AP = MSG_token2400[2].toDouble() ; 
+                   // Serial.printf("\ninlet:%4.2f",To_artisan.inlet);
                 
-            MsgString = "";
-            i=0;   
+
+            MsgString_2400 = "";
+
+            j=0;   
 
 }//function 
 
@@ -266,7 +281,8 @@ void handlePortal() {
   }
 }
 
-TickTwo ticker_1s(task_get_data, 1000, 0, MILLIS); 
+TickTwo ticker_task_1300_500ms(task_get_data_1300, 500, 0, MILLIS); 
+TickTwo ticker_task_2400_500ms(task_get_data_2400, 500, 0, MILLIS); 
 TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 void setup() {
@@ -309,9 +325,9 @@ Serial.begin(BAUDRATE);
         ; // wait for serial port ready
     }
 
-    Serial.printf("\nTC4-WB  STARTING...\n");
-    Serial.printf("\nSerial_in setup OK\n");
-    Serial.printf("\nRead data from EEPROM...\n");
+  // Serial.printf("\nTC4-WB  STARTING...\n");
+   // Serial.printf("\nSerial_in setup OK\n");
+   // Serial.printf("\nRead data from EEPROM...\n");
     // set up eeprom data
     EEPROM.begin(sizeof(user_wifi));
     EEPROM.get(0, user_wifi);
@@ -345,13 +361,14 @@ if (user_wifi.Init_mode)
   server.begin();
 
   webSocket.begin();
-  Serial.println("HTTP server started");
+ // Serial.println("HTTP server started");
 
 
     // event handler
   webSocket.onEvent(webSocketEvent);
 
-  ticker_1s.start();
+  ticker_task_1300_500ms.start();
+  ticker_task_2400_500ms.start();
   ticker_3mins.start();
 
 
@@ -361,7 +378,8 @@ if (user_wifi.Init_mode)
 void loop() {
     webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
-    ticker_1s.update(); 
+    ticker_task_1300_500ms.update(); 
+    ticker_task_2400_500ms.update();
     ticker_3mins.update();
 
 }

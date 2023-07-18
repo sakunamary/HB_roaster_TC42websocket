@@ -9,7 +9,7 @@
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 #define BAUDRATE 115200  //serial port baudrate
 
-#define VERSION "1.0.0"
+#define VERSION "1.0.3"
 
 // 网页设置的参数
  typedef struct eeprom_settings 
