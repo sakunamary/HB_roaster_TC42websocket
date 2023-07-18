@@ -11,11 +11,6 @@
 
 #define VERSION "1.0.0"
 
-
-#define DEBUG_MODE
-#define TX 10
-#define RX  9
-
 // 网页设置的参数
  typedef struct eeprom_settings 
 {

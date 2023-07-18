@@ -19,12 +19,6 @@
 #include "TickTwo.h" //ESP8266 compatible version of Ticker by sstaub
 #include "DFRobot_AHT20.h"
 
-
-//串口初始化
-
-//SoftwareSerial Serial_in;// D0 IO16 RX_drumer  D5 IO14 TX_drumer
-
-
 ESP8266WebServer    server(80); //构建webserver类
 WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
 DFRobot_AHT20 aht20;//构建aht20 类
@@ -51,10 +45,10 @@ void get_env_samples();//获取环境变量函数 ，每两分钟查询一次数
 
 String IpAddressToString(const IPAddress &ipAddress)
 {
-    return String(ipAddress[0]) + String(".") +
-           String(ipAddress[1]) + String(".") +
-           String(ipAddress[2]) + String(".") +
-           String(ipAddress[3]);
+    return  String(ipAddress[0]) + String(".") +
+            String(ipAddress[1]) + String(".") +
+            String(ipAddress[2]) + String(".") +
+            String(ipAddress[3]);
 }
 
 
@@ -165,7 +159,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
 
                 }
             break;
-        /*    
+           
         case WStype_BIN:
            // Serial_debug.printf("[%u] get binary length: %u\n", num, length);
             hexdump(data, len);
@@ -174,7 +168,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
             // webSocket.sendBIN(num, payload, length);
             break;
 
-        */
+        
         case WStype_PING:
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] PING from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
@@ -226,11 +220,11 @@ void task_get_data()
                     To_artisan.BT = MSG_token1300[1].toDouble();
                     To_artisan.ET = MSG_token1300[2].toDouble();
 
-                    Serial.printf("\nBT:%f,ET:%f",To_artisan.BT,To_artisan.ET);
+                    //Serial.printf("\nBT:%f,ET:%f",To_artisan.BT,To_artisan.ET);
                 
             MsgString = "";
             i=0;
-
+            delay(200);
             Serial.print("CHAN;2400\n");
             delay(20);
             Serial.flush();
@@ -271,10 +265,10 @@ void handlePortal() {
     EEPROM.put(0, user_wifi);
     EEPROM.commit();
 
-    server.send(200,   "text/html",  "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Wifi Setup</title><style>*,::after,::before{box-sizing:border-box;}body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#f5f5f5;}.form-control{display:block;width:100%;height:calc(1.5em + .75rem + 2px);border:1px solid #ced4da;}button{border:1px solid transparent;color:#fff;background-color:#007bff;border-color:#007bff;padding:.5rem 1rem;font-size:1.25rem;line-height:1.5;border-radius:.3rem;width:100%}.form-signin{width:100%;max-width:400px;padding:15px;margin:auto;}h1,p{text-align: center}</style> </head> <body><main class='form-signin'> <h1>Wifi Setup</h1> <br/> <p>Your settings have been saved successfully!<br />Please restart the device.</p></main></body></html>" );
+    server.send_P(200,   "text/html",  wifi_sussce_html );
   } else {
 
-    server.send(200,   "text/html", "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Wifi Setup</title> <style>*,::after,::before{box-sizing:border-box;}body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#f5f5f5;}.form-control{display:block;width:100%;height:calc(1.5em + .75rem + 2px);border:1px solid #ced4da;}button{cursor: pointer;border:1px solid transparent;color:#fff;background-color:#007bff;border-color:#007bff;padding:.5rem 1rem;font-size:1.25rem;line-height:1.5;border-radius:.3rem;width:100%}.form-signin{width:100%;max-width:400px;padding:15px;margin:auto;}h1{text-align: center}</style> </head> <body><main class='form-signin'> <form action='/' method='post'><h1 class=''>Wifi Setup</h1><br/><div class='form-floating'><label>SSID</label><input type='text' class='form-control' name='ssid'> </div><div class='form-floating'><br/><label>Password</label><input type='password' class='form-control' name='password'></div><br/><div class='form-floating'><label>PROCODE</label><input type='text' class='form-control' name='drum_prodc'></div><br/><br/><button type='submit'>Save</button><p style='text-align: right'><a href='https://www.mrdiy.ca' style='color: #32C5FF'>mrdiy.ca</a></p></form></main> </body></html>" );
+    server.send_P(200,   "text/html", index_html );
   }
 }
 
