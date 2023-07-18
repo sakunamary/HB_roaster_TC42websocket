@@ -64,10 +64,6 @@ String processor(const String &var)
     return String();
 }
 
-
-
-
-
 //Define Artisan Websocket events to exchange data
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
 //    {"command": "getData", "id": 93609, "roasterID": 0}
@@ -215,12 +211,10 @@ void task_get_data()
                    //Serial.println(MSG_token1300[i]);
                    i++;
                 }
-           
-  
+        
                     To_artisan.BT = MSG_token1300[1].toDouble();
                     To_artisan.ET = MSG_token1300[2].toDouble();
-
-                    //Serial.printf("\nBT:%f,ET:%f",To_artisan.BT,To_artisan.ET);
+                    Serial.printf("\nBT:%4.2f,ET:%4.2f",To_artisan.BT,To_artisan.ET);
                 
             MsgString = "";
             i=0;
