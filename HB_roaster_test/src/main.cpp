@@ -207,8 +207,9 @@ void task_get_data_1300()
 
             //Serial.println("send read");
             Serial.write("READ\n");
-            delay(50);
             Serial.flush();
+            delay(50);
+
             if(Serial.available()>0){
                 MsgString_1300 = Serial.readStringUntil('C');
                 MsgString_1300.concat('C');
@@ -234,11 +235,12 @@ void task_get_data_1300()
 void task_get_data_2400(){
         int j = 0 ;
         //Serial.println("task_get_data_2400 run");
-            Serial.println("CHAN;2400");
+            Serial.write("CHAN;2400\n ");
             delay(20);
             Serial.flush();
 
-            Serial.print("READ\n");
+            Serial.write("READ\n");
+            Serial.flush();
             delay(50);
             if(Serial.available()>0){
                 MsgString_2400 = Serial.readStringUntil('C');
@@ -257,11 +259,8 @@ void task_get_data_2400(){
     
                     To_artisan.inlet = MSG_token2400[1].toDouble() ; 
                     To_artisan.AP = MSG_token2400[2].toDouble() ; 
-                   // Serial.printf("\ninlet:%4.2f",To_artisan.inlet);
-                
-
+                   // Serial.printf("\ninlet:%4.2f",To_artisan.inlet);         
             MsgString_2400 = "";
-
             j=0;   
 
 }//function 
@@ -287,8 +286,8 @@ void handlePortal() {
   }
 }
 
-TickTwo ticker_task_1300_500ms(task_get_data_1300, 1000, 0, MILLIS); 
-TickTwo ticker_task_2400_500ms(task_get_data_2400, 1000, 0, MILLIS); 
+TickTwo ticker_task_1300_500ms(task_get_data_1300, 500, 0, MILLIS); 
+TickTwo ticker_task_2400_500ms(task_get_data_2400, 500, 0, MILLIS); 
 TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 void setup() {

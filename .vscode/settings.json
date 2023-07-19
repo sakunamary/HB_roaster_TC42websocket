@@ -19,7 +19,9 @@
         "*.ipp": "cpp",
         "algorithm": "cpp",
         "functional": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "*.tcc": "cpp",
+        "ostream": "cpp"
     },
     "MicroPython.executeButton": [
         {
