@@ -8,7 +8,7 @@
 
 #include <StringTokenizer.h>
 
- #include "SoftwareSerial.h"
+//#include "SoftwareSerial.h"
 
 #include "ArduinoJson.h"
 //Websockets Lib by links2004
@@ -23,7 +23,7 @@
 ESP8266WebServer    server(80); //构建webserver类
 WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
 DFRobot_AHT20 aht20;//构建aht20 类
-SoftwareSerial Serial_in ;
+//SoftwareSerial Serial_in ;
 
 
 char ap_name[30] ;
@@ -100,7 +100,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
         case WStype_CONNECTED:
             {
                 IPAddress ip = webSocket.remoteIP(num);
-                Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
+                //Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
         
                 // send message to client
                 webSocket.sendTXT(num, "Connected");
@@ -175,7 +175,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
         
         case WStype_PING:
         IPAddress ip = webSocket.remoteIP(num);
-        Serial.printf("[%u] PING from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
+        //Serial.printf("[%u] PING from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
             break;
             
     }
@@ -196,26 +196,26 @@ void get_env_samples(){//获取环境变量函数
 void task_get_data_1300()
 { //function 
     int i = 0;
-        Serial.println("task_get_data_1300 run");
+        //Serial.println("task_get_data_1300 run");
         // Wait for the next cycle (intervel 750ms)
         //获取数据
-            Serial.println("send chan;1300");
-            Serial_in.println("CHAN;1300\n");
-            delay(200);
-            Serial_in.flush();
-            Serial.println("send read");
-            Serial_in.println("READ\n");
+            //Serial.println("send chan;1300");
+            Serial.write("CHAN;1300\n");
+            delay(20);
+            Serial.flush();
 
-            delay(200);
-            
-            if(Serial_in.available()>0){
+
+            //Serial.println("send read");
+            Serial.write("READ\n");
+            delay(50);
+            Serial.flush();
+            if(Serial.available()>0){
                 MsgString_1300 = Serial.readStringUntil('C');
                 MsgString_1300.concat('C');
 
             } 
 
-                Serial.println("\ncmd1300 data:");
-                Serial.println(MsgString_1300);
+                //Serial.println("\ncmd1300 data:");
         StringTokenizer tokens1300(MsgString_1300, ",");
 
             while(tokens1300.hasNext()){
@@ -234,13 +234,13 @@ void task_get_data_1300()
 void task_get_data_2400(){
         int j = 0 ;
         //Serial.println("task_get_data_2400 run");
-            Serial_in.println("CHAN;2400");
+            Serial.println("CHAN;2400");
             delay(20);
-            Serial_in.flush();
+            Serial.flush();
 
-            Serial_in.print("READ\n");
+            Serial.print("READ\n");
             delay(50);
-            if(Serial_in.available()>0){
+            if(Serial.available()>0){
                 MsgString_2400 = Serial.readStringUntil('C');
                 MsgString_2400.concat('C');
 
@@ -300,7 +300,7 @@ aht20.begin();//初始化 AHT20
 get_env_samples();// init enveriment data getting.首次环境获取数据
 
 Serial.begin(BAUDRATE);
-Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 256); 
+//Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 256); 
 
   //初始化网络服务
     WiFi.mode(WIFI_STA);
@@ -311,7 +311,7 @@ Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 256);
     {
 
         delay(1000);
-        Serial.println("wifi not ready");
+       // Serial.println("wifi not ready");
 
         if (tries++ > 7)
         {
@@ -331,16 +331,16 @@ Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 256);
         ; // wait for serial port ready
     }
 
-       
+  /*
 while (!Serial_in){
     Serial.println("software serial not ready");
     delay(1000);
 }
+*/     
 
-
-  Serial.printf("\nTC4-WB  STARTING...\n");
-   Serial.printf("\nSerial_in setup OK\n");
-   Serial.printf("\nRead data from EEPROM...\n");
+   //Serial.printf("\nTC4-WB  STARTING...\n");
+   //Serial.printf("\nSerial_in setup OK\n");
+   //Serial.printf("\nRead data from EEPROM...\n");
 // set up eeprom data
     EEPROM.begin(sizeof(user_wifi));
     EEPROM.get(0, user_wifi);
@@ -356,16 +356,16 @@ if (user_wifi.Init_mode)
     EEPROM.commit();
 }
 
-    Serial.print("HB_WIFI's IP:");
+   // Serial.print("HB_WIFI's IP:");
 
     if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
     {
-        Serial.println(IpAddressToString(WiFi.softAPIP()));
+        //Serial.println(IpAddressToString(WiFi.softAPIP()));
         local_IP = IpAddressToString(WiFi.softAPIP());
     }
     else
     {
-        Serial.println(IpAddressToString(WiFi.localIP()));
+        //Serial.println(IpAddressToString(WiFi.localIP()));
         local_IP = IpAddressToString(WiFi.localIP());
     }
 
@@ -374,7 +374,7 @@ if (user_wifi.Init_mode)
   server.begin();
 
   webSocket.begin();
-  Serial.println("HTTP server started");
+  //Serial.println("HTTP server started");
 
 
     // event handler
