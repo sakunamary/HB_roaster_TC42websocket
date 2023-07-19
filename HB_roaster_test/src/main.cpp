@@ -201,14 +201,12 @@ void task_get_data_1300()
         //获取数据
             //Serial.println("send chan;1300");
             Serial.write("CHAN;1300\n");
-            delay(20);
             Serial.flush();
-
-
+            delay(20);
             //Serial.println("send read");
             Serial.write("READ\n");
             Serial.flush();
-            delay(50);
+            delay(20);
 
             if(Serial.available()>0){
                 MsgString_1300 = Serial.readStringUntil('C');
@@ -236,12 +234,12 @@ void task_get_data_2400(){
         int j = 0 ;
         //Serial.println("task_get_data_2400 run");
             Serial.write("CHAN;2400\n ");
-            delay(20);
             Serial.flush();
+           delay(20);
 
             Serial.write("READ\n");
             Serial.flush();
-            delay(50);
+            delay(20);
             if(Serial.available()>0){
                 MsgString_2400 = Serial.readStringUntil('C');
                 MsgString_2400.concat('C');
@@ -267,6 +265,7 @@ void task_get_data_2400(){
 
 
 
+
 void handlePortal() {
 
   if (server.method() == HTTP_POST) {
@@ -286,8 +285,8 @@ void handlePortal() {
   }
 }
 
-TickTwo ticker_task_1300_500ms(task_get_data_1300, 500, 0, MILLIS); 
-TickTwo ticker_task_2400_500ms(task_get_data_2400, 500, 0, MILLIS); 
+TickTwo ticker_task_1300_350ms(task_get_data_1300, 350, 0, MILLIS); 
+TickTwo ticker_task_2400_350ms(task_get_data_2400, 350, 0, MILLIS); 
 TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 void setup() {
@@ -379,8 +378,9 @@ if (user_wifi.Init_mode)
     // event handler
   webSocket.onEvent(webSocketEvent);
 
-  ticker_task_1300_500ms.start();
-  ticker_task_2400_500ms.start();
+  ticker_task_1300_350ms.start();
+  delay(300);
+  ticker_task_2400_350ms.start();
   ticker_3mins.start();
 
 
@@ -390,8 +390,8 @@ if (user_wifi.Init_mode)
 void loop() {
     webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
-    ticker_task_1300_500ms.update(); 
-    ticker_task_2400_500ms.update();
+    ticker_task_1300_350ms.update(); 
+    ticker_task_2400_350ms.update();
     ticker_3mins.update();
 
 }
