@@ -281,10 +281,6 @@ get_env_samples();// init enveriment data getting.首次环境获取数据
 
 Serial.begin(BAUDRATE);
 
-    while (!Serial)
-    {
-        ; // wait for serial port ready
-    }
 
   //初始化网络服务
     WiFi.mode(WIFI_STA);
@@ -329,16 +325,14 @@ if (user_wifi.Init_mode)
   server.begin();
 
   webSocket.begin();
-
     // event handler
   webSocket.onEvent(webSocketEvent);
+
 
  ticker_task_1300_1s.start();
  delay(500);
  ticker_task_2400_1s.start();
   ticker_3mins.start();
-
-
 
 }
 
@@ -346,7 +340,6 @@ void loop() {
     webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
     ticker_task_1300_1s.update();
-    delay(500);
     ticker_task_2400_1s.update();
     ticker_3mins.update();
 
