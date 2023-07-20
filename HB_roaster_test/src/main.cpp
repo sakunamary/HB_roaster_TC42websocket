@@ -326,7 +326,7 @@ void task_get_data(){
         MsgString_1300.concat('C');
     } 
 
-     while (Serial_in.read() >0 ) {}//clean buffer
+     while (Serial_in.read() >=0 ) {}//clean buffer
     StringTokenizer tokens1300(MsgString_1300, ",");
 
     while(tokens1300.hasNext()){
@@ -356,7 +356,7 @@ delay(500);
         MsgString_2400 = Serial_in.readStringUntil('C');
         MsgString_2400.concat('C');
     }
-     while (Serial_in.read() >0 ) {}//clean buffer
+     while (Serial_in.read() >=0 ) {}//clean buffer
         StringTokenizer tokens2400(MsgString_2400, ",");
             while(tokens2400.hasNext()){
                    MSG_token2400[j]=tokens2400.nextToken(); // prints the next token in the string
