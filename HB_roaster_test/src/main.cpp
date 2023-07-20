@@ -25,14 +25,6 @@ WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
 DFRobot_AHT20 aht20;//构建aht20 类
 
 
-#if defined(D1_MINI) 
-#include "SoftwareSerial.h"
-SoftwareSerial Serial_in ;
-#define TX_IN  D6
-#define RX_IN  D5
-
-#endif
-
 char ap_name[30] ;
 uint8_t macAddr[6];
 
@@ -313,21 +305,21 @@ void task_get_data(){
     int j=0;
 
     //Serial.println("send chan;1300");
-    Serial_in.write("CHAN;1300\n");
-    Serial_in.flush();
-    while (Serial_in.read() >=0 ) {}//clean buffer
+    Serial.write("CHAN;1300\n");
+    Serial.flush();
+    while (Serial.read() >=0 ) {}//clean buffer
     delay(20);
     //Serial.println("send read");
-    Serial_in.write("READ\n");
-    Serial_in.flush();
+    Serial.write("READ\n");
+    Serial.flush();
     delay(20);
 
-    if(Serial_in.available()>0){
-        MsgString_1300 = Serial_in.readStringUntil('C');
+    if(Serial.available()>0){
+        MsgString_1300 = Serial.readStringUntil('C');
         MsgString_1300.concat('C');
     } 
 
-     while (Serial_in.read() >=0 ) {}//clean buffer
+     while (Serial.read() >=0 ) {}//clean buffer
     StringTokenizer tokens1300(MsgString_1300, ",");
 
     while(tokens1300.hasNext()){
@@ -341,24 +333,24 @@ void task_get_data(){
             // Serial.printf("\nBT:%4.2f,ET:%4.2f",To_artisan.BT,To_artisan.ET);
             MsgString_1300 = "";    
             i=0;    
-
+     while (Serial.read() >=0 ) {}//clean buffer
 
 delay(300);
 //Serial.println("send chan;1300");
-    Serial_in.write("CHAN;2400\n");
-    Serial_in.flush();
-    while (Serial_in.read() >=0 ) {}//clean buffer
+    Serial.write("CHAN;2400\n");
+    Serial.flush();
+    while (Serial.read() >=0 ) {}//clean buffer
     delay(20);
     //Serial.println("send read");
-    Serial_in.write("READ\n");
-    Serial_in.flush();
+    Serial.write("READ\n");
+    Serial.flush();
     delay(20);
 
-    if(Serial_in.available()>0){
-        MsgString_2400 = Serial_in.readStringUntil('C');
+    if(Serial.available()>0){
+        MsgString_2400 = Serial.readStringUntil('C');
         MsgString_2400.concat('C');
     }
-     while (Serial_in.read() >=0 ) {}//clean buffer
+     while (Serial.read() >=0 ) {}//clean buffer
         StringTokenizer tokens2400(MsgString_2400, ",");
             while(tokens2400.hasNext()){
                    MSG_token2400[j]=tokens2400.nextToken(); // prints the next token in the string
@@ -408,10 +400,6 @@ get_env_samples();// init enveriment data getting.首次环境获取数据
 
 Serial.begin(BAUDRATE);
 
-#if defined(D1_MINI)
-Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 128); 
-#endif
-
   //初始化网络服务
     WiFi.mode(WIFI_STA);
     WiFi.begin(user_wifi.ssid, user_wifi.password);
@@ -423,7 +411,7 @@ Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 128);
         delay(1000);
        // Serial.println("wifi not ready");
 
-        if (tries++ > 7)
+        if (tries++ > 5)
         {
             WiFi.macAddress(macAddr); 
             // Serial_debug.println("WiFi.mode(AP):");
@@ -441,13 +429,6 @@ Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 128);
         ; // wait for serial port ready
     }
 
-  
-#if defined(D1_MINI)  
-while (!Serial_in){
-    Serial.println("software serial not ready");
-    delay(1000);
-}
-#endif  
 
    //Serial.printf("\nTC4-WB  STARTING...\n");
    //Serial.printf("\nSerial_in setup OK\n");

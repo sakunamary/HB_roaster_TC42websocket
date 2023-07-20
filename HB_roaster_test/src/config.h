@@ -7,9 +7,6 @@
 #define BAUDRATE 115200  //serial port baudrate
 
 
-#define D1_MINI
-
-
 
 #define VERSION "1.0.3"
 
