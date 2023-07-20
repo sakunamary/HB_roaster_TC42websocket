@@ -28,6 +28,9 @@ DFRobot_AHT20 aht20;//构建aht20 类
 #if defined(D1_MINI) 
 #include "SoftwareSerial.h"
 SoftwareSerial Serial_in ;
+#define TX_IN  D6
+#define RX_IN  D5
+
 #endif
 
 char ap_name[30] ;
@@ -60,8 +63,6 @@ String IpAddressToString(const IPAddress &ipAddress)
             String(ipAddress[2]) + String(".") +
             String(ipAddress[3]);
 }
-
-
 
 String processor(const String &var)
 {
@@ -205,16 +206,16 @@ void task_get_data_1300()
         //获取数据
 #if defined(D1_MINI) 
             //Serial.println("send chan;1300");
-            Serial.write("CHAN;1300\n");
-            Serial.flush();
+            Serial_in.write("CHAN;1300\n");
+            Serial_in.flush();
             delay(20);
             //Serial.println("send read");
-            Serial.write("READ\n");
-            Serial.flush();
+            Serial_in.write("READ\n");
+            Serial_in.flush();
             delay(20);
 
-            if(Serial.available()>0){
-                MsgString_1300 = Serial.readStringUntil('C');
+            if(Serial_in.available()>0){
+                MsgString_1300 = Serial_in.readStringUntil('C');
                 MsgString_1300.concat('C');
             } 
 #else
@@ -253,22 +254,37 @@ void task_get_data_1300()
 
 void task_get_data_2400(){
         int j = 0 ;
-        //Serial.println("task_get_data_2400 run");
-            Serial.write("CHAN;2400\n ");
-            Serial.flush();
-           delay(20);
 
+#if defined(D1_MINI) 
+            //Serial.println("send chan;1300");
+            Serial_in.write("CHAN;2400\n");
+            Serial_in.flush();
+            delay(50);
+            //Serial.println("send read");
+            Serial_in.write("READ\n");
+            Serial_in.flush();
+            delay(50);
+
+            if(Serial_in.available()>0){
+                MsgString_2400 = Serial_in.readStringUntil('C');
+                MsgString_2400.concat('C');
+            } 
+#else
+            //Serial.println("send chan;1300");
+            Serial.write("CHAN;2400\n");
+            Serial.flush();
+            delay(50);
+            //Serial.println("send read");
             Serial.write("READ\n");
             Serial.flush();
-            delay(20);
+            delay(50);
+
             if(Serial.available()>0){
                 MsgString_2400 = Serial.readStringUntil('C');
                 MsgString_2400.concat('C');
+            } 
 
-            }  
-                //Serial.printf("\ncmd2400 get:");
-                //Serial.println(MsgString_2400); 
-
+#endif    
         StringTokenizer tokens2400(MsgString_2400, ",");
             while(tokens2400.hasNext()){
                    MSG_token2400[j]=tokens2400.nextToken(); // prints the next token in the string
@@ -278,7 +294,8 @@ void task_get_data_2400(){
     
                     To_artisan.inlet = MSG_token2400[1].toDouble() ; 
                     To_artisan.AP = MSG_token2400[2].toDouble() ; 
-                   // Serial.printf("\ninlet:%4.2f",To_artisan.inlet);         
+                   // Serial.printf("\ninlet:%4.2f",To_artisan.inlet);  
+                      
             MsgString_2400 = "";
             j=0;   
 
@@ -306,8 +323,8 @@ void handlePortal() {
   }
 }
 
-TickTwo ticker_task_1300_350ms(task_get_data_1300, 350, 0, MILLIS); 
-TickTwo ticker_task_2400_350ms(task_get_data_2400, 350, 0, MILLIS); 
+TickTwo ticker_task_1300_500ms(task_get_data_1300, 500, 0, MILLIS); 
+TickTwo ticker_task_2400_500ms(task_get_data_2400, 500, 0, MILLIS); 
 TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 void setup() {
@@ -403,9 +420,9 @@ if (user_wifi.Init_mode)
     // event handler
   webSocket.onEvent(webSocketEvent);
 
-  ticker_task_1300_350ms.start();
-  delay(300);
-  ticker_task_2400_350ms.start();
+  ticker_task_1300_500ms.start();
+  delay(250);
+  ticker_task_2400_500ms.start();
   ticker_3mins.start();
 
 
@@ -415,8 +432,8 @@ if (user_wifi.Init_mode)
 void loop() {
     webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
-    ticker_task_1300_350ms.update(); 
-    ticker_task_2400_350ms.update();
+    ticker_task_1300_500ms.update(); 
+    ticker_task_2400_500ms.update();
     ticker_3mins.update();
 
 }

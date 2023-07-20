@@ -9,8 +9,7 @@
 
 #define D1_MINI
 
-#define TX_IN  D6
-#define RX_IN  D5
+
 
 #define VERSION "1.0.3"
 
