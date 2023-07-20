@@ -204,6 +204,9 @@ void task_get_data_1300()
         //Serial.println("task_get_data_1300 run");
         // Wait for the next cycle (intervel 750ms)
         //获取数据
+
+       while (Serial_in.read()>=0){}
+
 #if defined(D1_MINI) 
             //Serial.println("send chan;1300");
             Serial_in.write("CHAN;1300\n");
@@ -254,7 +257,7 @@ void task_get_data_1300()
 
 void task_get_data_2400(){
         int j = 0 ;
-
+       while (Serial_in.read()>=0){}
 #if defined(D1_MINI) 
             //Serial.println("send chan;1300");
             Serial_in.write("CHAN;2400\n");
