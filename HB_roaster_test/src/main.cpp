@@ -43,7 +43,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 void handlePortal();//处理设置网页处理模块
 void task_get_data_1300();//获取锅炉串口信息。
 void task_get_data_2400();
-void task_get_data();
+//void task_get_data();
 void get_env_samples();//获取环境变量函数 ，每两分钟查询一次数值再写入 To_artisan （已完成）
 
 String IpAddressToString(const IPAddress &ipAddress)
@@ -184,10 +184,8 @@ void get_env_samples(){//获取环境变量函数
 }// end of 获取环境变量函数
 
 
-void task_get_data(){
+void task_get_data_1300(){
     int i=0;
-    int j=0;
-
     //Serial.println("send chan;1300");
     Serial.write("CHAN;1300\n");
     Serial.flush();
@@ -217,8 +215,10 @@ void task_get_data(){
             i=0;    
      while (Serial.read() >=0 ) {}//clean buffer
 
-delay(300);
+}
+void task_get_data_2400(){
 
+  int j=0;
     Serial.write("CHAN;2400\n");
     Serial.flush();
     while (Serial.read() >=0 ) {}//clean buffer
@@ -244,7 +244,10 @@ delay(300);
             j=0;   
 
 }
-TickTwo ticker_task_1s(task_get_data, 1000, 0, MILLIS); 
+
+
+TickTwo ticker_task_1300_1s(task_get_data_1300, 1000, 0, MILLIS); 
+TickTwo ticker_task_2400_1s(task_get_data_2400,1000,0,MILLIS);
 TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 
@@ -278,6 +281,11 @@ get_env_samples();// init enveriment data getting.首次环境获取数据
 
 Serial.begin(BAUDRATE);
 
+    while (!Serial)
+    {
+        ; // wait for serial port ready
+    }
+
   //初始化网络服务
     WiFi.mode(WIFI_STA);
     WiFi.begin(user_wifi.ssid, user_wifi.password);
@@ -302,11 +310,6 @@ Serial.begin(BAUDRATE);
     }
 
 
-    while (!Serial)
-    {
-        ; // wait for serial port ready
-    }
-
 // set up eeprom data
     EEPROM.begin(sizeof(user_wifi));
     EEPROM.get(0, user_wifi);
@@ -330,7 +333,9 @@ if (user_wifi.Init_mode)
     // event handler
   webSocket.onEvent(webSocketEvent);
 
- ticker_task_1s.start();
+ ticker_task_1300_1s.start();
+ delay(500);
+ ticker_task_2400_1s.start();
   ticker_3mins.start();
 
 
@@ -340,7 +345,9 @@ if (user_wifi.Init_mode)
 void loop() {
     webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
-    ticker_task_1s.update();
+    ticker_task_1300_1s.update();
+    delay(500);
+    ticker_task_2400_1s.update();
     ticker_3mins.update();
 
 }
