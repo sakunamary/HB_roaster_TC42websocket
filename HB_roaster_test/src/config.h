@@ -7,7 +7,7 @@
 #define BAUDRATE 115200  //serial port baudrate
 
 
-#define D1_MINI
+//#define D1_MINI
 
 
 

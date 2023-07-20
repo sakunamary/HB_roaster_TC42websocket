@@ -25,14 +25,6 @@ WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
 DFRobot_AHT20 aht20;//构建aht20 类
 
 
-#if defined(D1_MINI) 
-#include "SoftwareSerial.h"
-SoftwareSerial Serial_in ;
-#define TX_IN  D6
-#define RX_IN  D5
-
-#endif
-
 char ap_name[30] ;
 uint8_t macAddr[6];
 
@@ -47,6 +39,7 @@ String MSG_token2400[4];
 
 user_wifi_t user_wifi = {" ", " ", false};
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0.0,0.0};
+
 
 
 //functions declear for PlatfromIO rules
@@ -66,7 +59,7 @@ String IpAddressToString(const IPAddress &ipAddress)
 
 String processor(const String &var)
 {
-    Serial.println(var);
+    //Serial.println(var);
   if (var == "version")
     {
         return VERSION;
@@ -204,43 +197,23 @@ void task_get_data_1300()
         //Serial.println("task_get_data_1300 run");
         // Wait for the next cycle (intervel 750ms)
         //获取数据
-
-       while (Serial_in.read()>=0){}
-
-#if defined(D1_MINI) 
-            //Serial.println("send chan;1300");
-            Serial_in.write("CHAN;1300\n");
-            Serial_in.flush();
-            delay(20);
-            //Serial.println("send read");
-            Serial_in.write("READ\n");
-            Serial_in.flush();
-            delay(20);
-
-            if(Serial_in.available()>0){
-                MsgString_1300 = Serial_in.readStringUntil('C');
-                MsgString_1300.concat('C');
-            } 
-#else
             //Serial.println("send chan;1300");
             Serial.write("CHAN;1300\n");
             Serial.flush();
+            while (Serial.read()>=0){}
             delay(20);
             //Serial.println("send read");
             Serial.write("READ\n");
             Serial.flush();
-            delay(20);
+            delay(100);
 
             if(Serial.available()>0){
                 MsgString_1300 = Serial.readStringUntil('C');
                 MsgString_1300.concat('C');
             } 
-#endif
-
-
-
+            while (Serial.read()>=0){}
                 //Serial.println("\ncmd1300 data:");
-        StringTokenizer tokens1300(MsgString_1300, ",");
+            StringTokenizer tokens1300(MsgString_1300, ",");
 
             while(tokens1300.hasNext()){
                    MSG_token1300[i]=tokens1300.nextToken(); // prints the next token in the string
@@ -257,38 +230,24 @@ void task_get_data_1300()
 
 void task_get_data_2400(){
         int j = 0 ;
-       while (Serial_in.read()>=0){}
-#if defined(D1_MINI) 
-            //Serial.println("send chan;1300");
-            Serial_in.write("CHAN;2400\n");
-            Serial_in.flush();
-            delay(50);
-            //Serial.println("send read");
-            Serial_in.write("READ\n");
-            Serial_in.flush();
-            delay(50);
 
-            if(Serial_in.available()>0){
-                MsgString_2400 = Serial_in.readStringUntil('C');
-                MsgString_2400.concat('C');
-            } 
-#else
             //Serial.println("send chan;1300");
             Serial.write("CHAN;2400\n");
             Serial.flush();
-            delay(50);
+            delay(20);
+            while (Serial.read()>=0){}
             //Serial.println("send read");
             Serial.write("READ\n");
             Serial.flush();
-            delay(50);
+            delay(100);
 
             if(Serial.available()>0){
                 MsgString_2400 = Serial.readStringUntil('C');
                 MsgString_2400.concat('C');
             } 
+            while (Serial.read()>=0){} 
+            StringTokenizer tokens2400(MsgString_2400, ",");
 
-#endif    
-        StringTokenizer tokens2400(MsgString_2400, ",");
             while(tokens2400.hasNext()){
                    MSG_token2400[j]=tokens2400.nextToken(); // prints the next token in the string
                    //Serial.println(MSG_token2400[i]);
@@ -326,8 +285,8 @@ void handlePortal() {
   }
 }
 
-TickTwo ticker_task_1300_500ms(task_get_data_1300, 500, 0, MILLIS); 
-TickTwo ticker_task_2400_500ms(task_get_data_2400, 500, 0, MILLIS); 
+TickTwo ticker_task_1300_500ms(task_get_data_1300, 1000, 0, MILLIS); 
+TickTwo ticker_task_2400_500ms(task_get_data_2400, 1000, 0, MILLIS); 
 TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 void setup() {
@@ -339,10 +298,6 @@ aht20.begin();//初始化 AHT20
 get_env_samples();// init enveriment data getting.首次环境获取数据
 
 Serial.begin(BAUDRATE);
-
-#if defined(D1_MINI)
-Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 256); 
-#endif
 
   //初始化网络服务
     WiFi.mode(WIFI_STA);
@@ -373,13 +328,7 @@ Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 256);
         ; // wait for serial port ready
     }
 
-  
-#if defined(D1_MINI)  
-while (!Serial_in){
-    Serial.println("software serial not ready");
-    delay(1000);
-}
-#endif  
+
 
    //Serial.printf("\nTC4-WB  STARTING...\n");
    //Serial.printf("\nSerial_in setup OK\n");
@@ -424,7 +373,7 @@ if (user_wifi.Init_mode)
   webSocket.onEvent(webSocketEvent);
 
   ticker_task_1300_500ms.start();
-  delay(250);
+  delay(500);
   ticker_task_2400_500ms.start();
   ticker_3mins.start();
 
@@ -436,6 +385,7 @@ void loop() {
     webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
     ticker_task_1300_500ms.update(); 
+    delay(500);
     ticker_task_2400_500ms.update();
     ticker_3mins.update();
 
