@@ -41,12 +41,12 @@ user_wifi_t user_wifi = {" ", " ", false};
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0.0,0.0};
 
 
-
 //functions declear for PlatfromIO rules
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) ;
 void handlePortal();//处理设置网页处理模块
 void task_get_data_1300();//获取锅炉串口信息。
 void task_get_data_2400();
+void task_get_data();
 void get_env_samples();//获取环境变量函数 ，每两分钟查询一次数值再写入 To_artisan （已完成）
 
 String IpAddressToString(const IPAddress &ipAddress)
@@ -59,7 +59,6 @@ String IpAddressToString(const IPAddress &ipAddress)
 
 String processor(const String &var)
 {
-    //Serial.println(var);
   if (var == "version")
     {
         return VERSION;
@@ -106,9 +105,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
             break;
         case WStype_TEXT:
             { 
-            //DEBUG WEBSOCKET
-            //Serial.printf("[%u] get Text: %s\n", num, payload);
-
             //Extract Values lt. https://arduinojson.org/v6/example/http-client/
             //Artisan Anleitung: https://artisan-scope.org/devices/websockets/
 
@@ -191,79 +187,68 @@ void get_env_samples(){//获取环境变量函数
 }// end of 获取环境变量函数
 
 
-void task_get_data_1300()
-{ //function 
-    int i = 0;
-        //Serial.println("task_get_data_1300 run");
-        // Wait for the next cycle (intervel 750ms)
-        //获取数据
-            //Serial.println("send chan;1300");
-            Serial.write("CHAN;1300\n");
-            Serial.flush();
-            while (Serial.read()>=0){}
-            delay(20);
-            //Serial.println("send read");
-            Serial.write("READ\n");
-            Serial.flush();
-            delay(100);
+void task_get_data(){
+    int i=0;
+    int j=0;
 
-            if(Serial.available()>0){
-                MsgString_1300 = Serial.readStringUntil('C');
-                MsgString_1300.concat('C');
-            } 
-            while (Serial.read()>=0){}
-                //Serial.println("\ncmd1300 data:");
-            StringTokenizer tokens1300(MsgString_1300, ",");
+    //Serial.println("send chan;1300");
+    Serial.write("CHAN;1300\n");
+    Serial.flush();
+    while (Serial.read() >=0 ) {}//clean buffer
+    delay(20);
+    Serial.write("READ\n");
+    Serial.flush();
+    delay(20);
 
-            while(tokens1300.hasNext()){
-                   MSG_token1300[i]=tokens1300.nextToken(); // prints the next token in the string
-                   //Serial.println(MSG_token1300[i]);
-                   i++;
-                }
-        
-                    To_artisan.BT = MSG_token1300[1].toDouble();
-                    To_artisan.ET = MSG_token1300[2].toDouble();
-                   // Serial.printf("\nBT:%4.2f,ET:%4.2f",To_artisan.BT,To_artisan.ET);
-                    MsgString_1300 = "";    
-                    i=0;    
-}
+    if(Serial.available()>0){
+        MsgString_1300 = Serial.readStringUntil('C');
+        MsgString_1300.concat('C');
+    } 
 
-void task_get_data_2400(){
-        int j = 0 ;
+     while (Serial.read() >=0 ) {}//clean buffer
+    StringTokenizer tokens1300(MsgString_1300, ",");
 
-            //Serial.println("send chan;1300");
-            Serial.write("CHAN;2400\n");
-            Serial.flush();
-            delay(20);
-            while (Serial.read()>=0){}
-            //Serial.println("send read");
-            Serial.write("READ\n");
-            Serial.flush();
-            delay(100);
+    while(tokens1300.hasNext()){
+            MSG_token1300[i]=tokens1300.nextToken(); // prints the next token in the string
+            i++;
+        }
 
-            if(Serial.available()>0){
-                MsgString_2400 = Serial.readStringUntil('C');
-                MsgString_2400.concat('C');
-            } 
-            while (Serial.read()>=0){} 
-            StringTokenizer tokens2400(MsgString_2400, ",");
+            To_artisan.BT = MSG_token1300[1].toDouble();
+            To_artisan.ET = MSG_token1300[2].toDouble();
 
+            MsgString_1300 = "";    
+            i=0;    
+     while (Serial.read() >=0 ) {}//clean buffer
+
+delay(300);
+
+    Serial.write("CHAN;2400\n");
+    Serial.flush();
+    while (Serial.read() >=0 ) {}//clean buffer
+    delay(20);
+    Serial.write("READ\n");
+    Serial.flush();
+    delay(20);
+
+    if(Serial.available()>0){
+        MsgString_2400 = Serial.readStringUntil('C');
+        MsgString_2400.concat('C');
+    }
+     while (Serial.read() >=0 ) {}//clean buffer
+        StringTokenizer tokens2400(MsgString_2400, ",");
             while(tokens2400.hasNext()){
                    MSG_token2400[j]=tokens2400.nextToken(); // prints the next token in the string
-                   //Serial.println(MSG_token2400[i]);
                    j++;
                 }
     
                     To_artisan.inlet = MSG_token2400[1].toDouble() ; 
-                    To_artisan.AP = MSG_token2400[2].toDouble() ; 
-                   // Serial.printf("\ninlet:%4.2f",To_artisan.inlet);  
-                      
+                    To_artisan.AP = MSG_token2400[2].toDouble() ;                      
             MsgString_2400 = "";
             j=0;   
 
-}//function 
-
-
+}
+TickTwo ticker_task_1s(task_get_data, 1000, 0, MILLIS); 
+TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 
 void handlePortal() {
@@ -285,9 +270,6 @@ void handlePortal() {
   }
 }
 
-TickTwo ticker_task_1300_500ms(task_get_data_1300, 1000, 0, MILLIS); 
-TickTwo ticker_task_2400_500ms(task_get_data_2400, 1000, 0, MILLIS); 
-TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 void setup() {
 
@@ -310,7 +292,7 @@ Serial.begin(BAUDRATE);
         delay(1000);
        // Serial.println("wifi not ready");
 
-        if (tries++ > 7)
+        if (tries++ > 5)
         {
             WiFi.macAddress(macAddr); 
             // Serial_debug.println("WiFi.mode(AP):");
@@ -328,11 +310,6 @@ Serial.begin(BAUDRATE);
         ; // wait for serial port ready
     }
 
-
-
-   //Serial.printf("\nTC4-WB  STARTING...\n");
-   //Serial.printf("\nSerial_in setup OK\n");
-   //Serial.printf("\nRead data from EEPROM...\n");
 // set up eeprom data
     EEPROM.begin(sizeof(user_wifi));
     EEPROM.get(0, user_wifi);
@@ -348,33 +325,15 @@ if (user_wifi.Init_mode)
     EEPROM.commit();
 }
 
-   // Serial.print("HB_WIFI's IP:");
-/*
-    if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
-    {
-        //Serial.println(IpAddressToString(WiFi.softAPIP()));
-        local_IP = IpAddressToString(WiFi.softAPIP());
-    }
-    else
-    {
-        //Serial.println(IpAddressToString(WiFi.localIP()));
-        local_IP = IpAddressToString(WiFi.localIP());
-    }
-*/
-
   server.on("/",  handlePortal);
   server.begin();
 
   webSocket.begin();
-  //Serial.println("HTTP server started");
-
 
     // event handler
   webSocket.onEvent(webSocketEvent);
 
-  ticker_task_1300_500ms.start();
-  delay(500);
-  ticker_task_2400_500ms.start();
+ ticker_task_1s.start();
   ticker_3mins.start();
 
 
@@ -384,9 +343,7 @@ if (user_wifi.Init_mode)
 void loop() {
     webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
-    ticker_task_1300_500ms.update(); 
-    delay(500);
-    ticker_task_2400_500ms.update();
+    ticker_task_1s.update();
     ticker_3mins.update();
 
 }
