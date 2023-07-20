@@ -7,6 +7,8 @@
 #define BAUDRATE 115200  //serial port baudrate
 
 
+#define D1_MINI
+
 #define TX_IN  D6
 #define RX_IN  D5
 

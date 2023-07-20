@@ -8,7 +8,7 @@
 
 #include <StringTokenizer.h>
 
-//#include "SoftwareSerial.h"
+
 
 #include "ArduinoJson.h"
 //Websockets Lib by links2004
@@ -23,8 +23,12 @@
 ESP8266WebServer    server(80); //构建webserver类
 WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
 DFRobot_AHT20 aht20;//构建aht20 类
-//SoftwareSerial Serial_in ;
 
+
+#if defined(D1_MINI) 
+#include "SoftwareSerial.h"
+SoftwareSerial Serial_in ;
+#endif
 
 char ap_name[30] ;
 uint8_t macAddr[6];
@@ -199,6 +203,7 @@ void task_get_data_1300()
         //Serial.println("task_get_data_1300 run");
         // Wait for the next cycle (intervel 750ms)
         //获取数据
+#if defined(D1_MINI) 
             //Serial.println("send chan;1300");
             Serial.write("CHAN;1300\n");
             Serial.flush();
@@ -211,8 +216,24 @@ void task_get_data_1300()
             if(Serial.available()>0){
                 MsgString_1300 = Serial.readStringUntil('C');
                 MsgString_1300.concat('C');
-
             } 
+#else
+            //Serial.println("send chan;1300");
+            Serial.write("CHAN;1300\n");
+            Serial.flush();
+            delay(20);
+            //Serial.println("send read");
+            Serial.write("READ\n");
+            Serial.flush();
+            delay(20);
+
+            if(Serial.available()>0){
+                MsgString_1300 = Serial.readStringUntil('C');
+                MsgString_1300.concat('C');
+            } 
+#endif
+
+
 
                 //Serial.println("\ncmd1300 data:");
         StringTokenizer tokens1300(MsgString_1300, ",");
@@ -298,7 +319,10 @@ aht20.begin();//初始化 AHT20
 get_env_samples();// init enveriment data getting.首次环境获取数据
 
 Serial.begin(BAUDRATE);
-//Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 256); 
+
+#if defined(D1_MINI)
+Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 256); 
+#endif
 
   //初始化网络服务
     WiFi.mode(WIFI_STA);
@@ -329,12 +353,13 @@ Serial.begin(BAUDRATE);
         ; // wait for serial port ready
     }
 
-  /*
+  
+#if defined(D1_MINI)  
 while (!Serial_in){
     Serial.println("software serial not ready");
     delay(1000);
 }
-*/     
+#endif  
 
    //Serial.printf("\nTC4-WB  STARTING...\n");
    //Serial.printf("\nSerial_in setup OK\n");
@@ -355,7 +380,7 @@ if (user_wifi.Init_mode)
 }
 
    // Serial.print("HB_WIFI's IP:");
-
+/*
     if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
     {
         //Serial.println(IpAddressToString(WiFi.softAPIP()));
@@ -366,7 +391,7 @@ if (user_wifi.Init_mode)
         //Serial.println(IpAddressToString(WiFi.localIP()));
         local_IP = IpAddressToString(WiFi.localIP());
     }
-
+*/
 
   server.on("/",  handlePortal);
   server.begin();
