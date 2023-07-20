@@ -54,6 +54,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 void handlePortal();//处理设置网页处理模块
 void task_get_data_1300();//获取锅炉串口信息。
 void task_get_data_2400();
+void task_get_data();
 void get_env_samples();//获取环境变量函数 ，每两分钟查询一次数值再写入 To_artisan （已完成）
 
 String IpAddressToString(const IPAddress &ipAddress)
@@ -197,8 +198,8 @@ void get_env_samples(){//获取环境变量函数
 
 }// end of 获取环境变量函数
 
-
-void task_get_data_1300()
+/*
+void task_get_data()
 { //function 
     int i = 0;
         //Serial.println("task_get_data_1300 run");
@@ -301,7 +302,78 @@ void task_get_data_2400(){
 
 }//function 
 
+TickTwo ticker_task_1300_500ms(task_get_data_1300, 500, 0, MILLIS); 
+TickTwo ticker_task_2400_500ms(task_get_data_2400, 500, 0, MILLIS); 
 
+
+*/
+
+void task_get_data(){
+    int i=0;
+    int j=0;
+
+    //Serial.println("send chan;1300");
+    Serial_in.write("CHAN;1300\n");
+    Serial_in.flush();
+    delay(20);
+    //Serial.println("send read");
+    Serial_in.write("READ\n");
+    Serial_in.flush();
+    delay(20);
+
+    if(Serial_in.available()>0){
+        MsgString_1300 = Serial_in.readStringUntil('C');
+        MsgString_1300.concat('C');
+    } 
+
+     while (Serial_in.read() >0 ) {}//clean buffer
+    StringTokenizer tokens1300(MsgString_1300, ",");
+
+    while(tokens1300.hasNext()){
+            MSG_token1300[i]=tokens1300.nextToken(); // prints the next token in the string
+            //Serial.println(MSG_token1300[i]);
+            i++;
+        }
+
+            To_artisan.BT = MSG_token1300[1].toDouble();
+            To_artisan.ET = MSG_token1300[2].toDouble();
+            // Serial.printf("\nBT:%4.2f,ET:%4.2f",To_artisan.BT,To_artisan.ET);
+            MsgString_1300 = "";    
+            i=0;    
+
+
+delay(500);
+//Serial.println("send chan;1300");
+    Serial_in.write("CHAN;2400\n");
+    Serial_in.flush();
+    delay(50);
+    //Serial.println("send read");
+    Serial_in.write("READ\n");
+    Serial_in.flush();
+    delay(50);
+
+    if(Serial_in.available()>0){
+        MsgString_2400 = Serial_in.readStringUntil('C');
+        MsgString_2400.concat('C');
+    }
+     while (Serial_in.read() >0 ) {}//clean buffer
+        StringTokenizer tokens2400(MsgString_2400, ",");
+            while(tokens2400.hasNext()){
+                   MSG_token2400[j]=tokens2400.nextToken(); // prints the next token in the string
+                   //Serial.println(MSG_token2400[i]);
+                   j++;
+                }
+    
+                    To_artisan.inlet = MSG_token2400[1].toDouble() ; 
+                    To_artisan.AP = MSG_token2400[2].toDouble() ; 
+                   // Serial.printf("\ninlet:%4.2f",To_artisan.inlet);  
+                      
+            MsgString_2400 = "";
+            j=0;   
+
+}
+TickTwo ticker_task_1s(task_get_data, 1000, 0, MILLIS); 
+TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 
 void handlePortal() {
@@ -323,9 +395,6 @@ void handlePortal() {
   }
 }
 
-TickTwo ticker_task_1300_500ms(task_get_data_1300, 500, 0, MILLIS); 
-TickTwo ticker_task_2400_500ms(task_get_data_2400, 500, 0, MILLIS); 
-TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 void setup() {
 
@@ -419,10 +488,12 @@ if (user_wifi.Init_mode)
 
     // event handler
   webSocket.onEvent(webSocketEvent);
-
+/*
   ticker_task_1300_500ms.start();
   delay(250);
   ticker_task_2400_500ms.start();
+  */
+ ticker_task_1s.start();
   ticker_3mins.start();
 
 
@@ -432,8 +503,11 @@ if (user_wifi.Init_mode)
 void loop() {
     webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
+    /*
     ticker_task_1300_500ms.update(); 
     ticker_task_2400_500ms.update();
+    */
+    ticker_task_1s.update();
     ticker_3mins.update();
 
 }
