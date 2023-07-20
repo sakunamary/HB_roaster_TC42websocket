@@ -5,10 +5,7 @@
 #include <ESP8266WebServer.h>
 #include <EEPROM.h>
 
-
 #include <StringTokenizer.h>
-
-
 
 #include "ArduinoJson.h"
 //Websockets Lib by links2004
