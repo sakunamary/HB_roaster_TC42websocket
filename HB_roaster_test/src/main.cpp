@@ -8,7 +8,7 @@
 
 #include <StringTokenizer.h>
 
-// #include "SoftwareSerial.h"
+
 
 #include "ArduinoJson.h"
 //Websockets Lib by links2004
@@ -25,6 +25,14 @@ WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
 DFRobot_AHT20 aht20;//构建aht20 类
 
 
+#if defined(D1_MINI) 
+#include "SoftwareSerial.h"
+SoftwareSerial Serial_in ;
+#define TX_IN  D6
+#define RX_IN  D5
+
+#endif
+
 char ap_name[30] ;
 uint8_t macAddr[6];
 
@@ -34,6 +42,7 @@ String MsgString_2400;
 String local_IP;
 String MSG_token1300[4];
 String MSG_token2400[4];
+
 
 
 user_wifi_t user_wifi = {" ", " ", false};
@@ -54,8 +63,6 @@ String IpAddressToString(const IPAddress &ipAddress)
             String(ipAddress[2]) + String(".") +
             String(ipAddress[3]);
 }
-
-
 
 String processor(const String &var)
 {
@@ -98,7 +105,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
         case WStype_CONNECTED:
             {
                 IPAddress ip = webSocket.remoteIP(num);
-                Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
+                //Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
         
                 // send message to client
                 webSocket.sendTXT(num, "Connected");
@@ -173,7 +180,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
         
         case WStype_PING:
         IPAddress ip = webSocket.remoteIP(num);
-        Serial.printf("[%u] PING from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
+        //Serial.printf("[%u] PING from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
             break;
             
     }
@@ -194,23 +201,42 @@ void get_env_samples(){//获取环境变量函数
 void task_get_data_1300()
 { //function 
     int i = 0;
-
+        //Serial.println("task_get_data_1300 run");
         // Wait for the next cycle (intervel 750ms)
         //获取数据
-            Serial.print("CHAN;1300\n");
+#if defined(D1_MINI) 
+            //Serial.println("send chan;1300");
+            Serial_in.write("CHAN;1300\n");
+            Serial_in.flush();
             delay(20);
-            Serial.flush();
+            //Serial.println("send read");
+            Serial_in.write("READ\n");
+            Serial_in.flush();
+            delay(20);
 
-            Serial.print("READ\n");
-            delay(50);
+            if(Serial_in.available()>0){
+                MsgString_1300 = Serial_in.readStringUntil('C');
+                MsgString_1300.concat('C');
+            } 
+#else
+            //Serial.println("send chan;1300");
+            Serial.write("CHAN;1300\n");
+            Serial.flush();
+            delay(20);
+            //Serial.println("send read");
+            Serial.write("READ\n");
+            Serial.flush();
+            delay(20);
+
             if(Serial.available()>0){
                 MsgString_1300 = Serial.readStringUntil('C');
                 MsgString_1300.concat('C');
             } 
+#endif
 
-            //Serial.println("read from drummer:");
-            //Serial.println(MsgString);
 
+
+                //Serial.println("\ncmd1300 data:");
         StringTokenizer tokens1300(MsgString_1300, ",");
 
             while(tokens1300.hasNext()){
@@ -229,19 +255,36 @@ void task_get_data_1300()
 void task_get_data_2400(){
         int j = 0 ;
 
-            Serial.print("CHAN;2400\n");
-            delay(20);
-            Serial.flush();
-
-            Serial.print("READ\n");
+#if defined(D1_MINI) 
+            //Serial.println("send chan;1300");
+            Serial_in.write("CHAN;2400\n");
+            Serial_in.flush();
             delay(50);
+            //Serial.println("send read");
+            Serial_in.write("READ\n");
+            Serial_in.flush();
+            delay(50);
+
+            if(Serial_in.available()>0){
+                MsgString_2400 = Serial_in.readStringUntil('C');
+                MsgString_2400.concat('C');
+            } 
+#else
+            //Serial.println("send chan;1300");
+            Serial.write("CHAN;2400\n");
+            Serial.flush();
+            delay(50);
+            //Serial.println("send read");
+            Serial.write("READ\n");
+            Serial.flush();
+            delay(50);
+
             if(Serial.available()>0){
                 MsgString_2400 = Serial.readStringUntil('C');
                 MsgString_2400.concat('C');
-                //Serial.printf("\ncmd2400 get:");
-                //erial.println(MsgString_2400);
-            }   
+            } 
 
+#endif    
         StringTokenizer tokens2400(MsgString_2400, ",");
             while(tokens2400.hasNext()){
                    MSG_token2400[j]=tokens2400.nextToken(); // prints the next token in the string
@@ -251,14 +294,13 @@ void task_get_data_2400(){
     
                     To_artisan.inlet = MSG_token2400[1].toDouble() ; 
                     To_artisan.AP = MSG_token2400[2].toDouble() ; 
-                   // Serial.printf("\ninlet:%4.2f",To_artisan.inlet);
-                
-
+                   // Serial.printf("\ninlet:%4.2f",To_artisan.inlet);  
+                      
             MsgString_2400 = "";
-
             j=0;   
 
 }//function 
+
 
 
 
@@ -294,8 +336,11 @@ aht20.begin();//初始化 AHT20
 get_env_samples();// init enveriment data getting.首次环境获取数据
 
 Serial.begin(BAUDRATE);
-//Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX, RX, false, 256); 
-   
+
+#if defined(D1_MINI)
+Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 256); 
+#endif
+
   //初始化网络服务
     WiFi.mode(WIFI_STA);
     WiFi.begin(user_wifi.ssid, user_wifi.password);
@@ -305,7 +350,7 @@ Serial.begin(BAUDRATE);
     {
 
         delay(1000);
-        Serial.println("wifi not ready");
+       // Serial.println("wifi not ready");
 
         if (tries++ > 7)
         {
@@ -325,10 +370,18 @@ Serial.begin(BAUDRATE);
         ; // wait for serial port ready
     }
 
-  // Serial.printf("\nTC4-WB  STARTING...\n");
-   // Serial.printf("\nSerial_in setup OK\n");
-   // Serial.printf("\nRead data from EEPROM...\n");
-    // set up eeprom data
+  
+#if defined(D1_MINI)  
+while (!Serial_in){
+    Serial.println("software serial not ready");
+    delay(1000);
+}
+#endif  
+
+   //Serial.printf("\nTC4-WB  STARTING...\n");
+   //Serial.printf("\nSerial_in setup OK\n");
+   //Serial.printf("\nRead data from EEPROM...\n");
+// set up eeprom data
     EEPROM.begin(sizeof(user_wifi));
     EEPROM.get(0, user_wifi);
 
@@ -343,31 +396,32 @@ if (user_wifi.Init_mode)
     EEPROM.commit();
 }
 
-    Serial.print("HB_WIFI's IP:");
-
+   // Serial.print("HB_WIFI's IP:");
+/*
     if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
     {
-        Serial.println(IpAddressToString(WiFi.softAPIP()));
+        //Serial.println(IpAddressToString(WiFi.softAPIP()));
         local_IP = IpAddressToString(WiFi.softAPIP());
     }
     else
     {
-        Serial.println(IpAddressToString(WiFi.localIP()));
+        //Serial.println(IpAddressToString(WiFi.localIP()));
         local_IP = IpAddressToString(WiFi.localIP());
     }
-
+*/
 
   server.on("/",  handlePortal);
   server.begin();
 
   webSocket.begin();
- // Serial.println("HTTP server started");
+  //Serial.println("HTTP server started");
 
 
     // event handler
   webSocket.onEvent(webSocketEvent);
 
   ticker_task_1300_500ms.start();
+  delay(250);
   ticker_task_2400_500ms.start();
   ticker_3mins.start();
 

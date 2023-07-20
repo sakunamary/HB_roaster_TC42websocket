@@ -8,6 +8,10 @@
         "unordered_map": "cpp",
         "vector": "cpp",
         "initializer_list": "cpp",
-        "ranges": "cpp"
-    }
+        "ranges": "cpp",
+        "regex": "cpp",
+        "*.tcc": "cpp",
+        "ostream": "cpp"
+    },
+    "cmake.sourceDirectory": "/home/pi/文档/GitHub/HB_roaster_TC42websocket/HB_roaster_test/.pio/libdeps/esp07s/ArduinoJson/src"
 }
