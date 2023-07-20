@@ -315,6 +315,7 @@ void task_get_data(){
     //Serial.println("send chan;1300");
     Serial_in.write("CHAN;1300\n");
     Serial_in.flush();
+    while (Serial_in.read() >=0 ) {}//clean buffer
     delay(20);
     //Serial.println("send read");
     Serial_in.write("READ\n");
@@ -342,15 +343,16 @@ void task_get_data(){
             i=0;    
 
 
-delay(500);
+delay(300);
 //Serial.println("send chan;1300");
     Serial_in.write("CHAN;2400\n");
     Serial_in.flush();
-    delay(50);
+    while (Serial_in.read() >=0 ) {}//clean buffer
+    delay(20);
     //Serial.println("send read");
     Serial_in.write("READ\n");
     Serial_in.flush();
-    delay(50);
+    delay(20);
 
     if(Serial_in.available()>0){
         MsgString_2400 = Serial_in.readStringUntil('C');
@@ -407,7 +409,7 @@ get_env_samples();// init enveriment data getting.首次环境获取数据
 Serial.begin(BAUDRATE);
 
 #if defined(D1_MINI)
-Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 256); 
+Serial_in.begin(BAUDRATE, SWSERIAL_8N1, TX_IN, RX_IN, 0, 128); 
 #endif
 
   //初始化网络服务
