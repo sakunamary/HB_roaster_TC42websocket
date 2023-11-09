@@ -13,10 +13,11 @@
 #include <StringTokenizer.h>
 //#include <WebSerial.h>
 //
-//#include "SoftwareSerial.h"
+
 #include "ArduinoJson.h"
-//#include "task_get_data.h"
-//#include "task_send_data.h"
+
+#include <pwmWrite.h>
+#include <ESP32Encoder.h>
 
 
 
@@ -43,6 +44,16 @@ String MSG_token2400[4];
 user_wifi_t user_wifi = {" ", " ", false};
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0};
 
+//const uint32_t frequency = PWM_FREQ;
+const byte resolution = PWM_RESOLUTION; //pwm -0-4096
+
+int encoder_postion ;
+
+//pwm object 
+Pwm pwm = Pwm();
+
+// rotary encoder object
+ESP32Encoder encoder;
 
 TaskHandle_t xHandle_indicator;
 
@@ -306,7 +317,7 @@ void setup() {
         ; // wait for serial port ready
     }
 
-    Serial.printf("\nTC4-WB  STARTING...\n");
+    Serial.printf("\nHB_WIFI  STARTING...\n");
     Serial.printf("\nSerial_in setup OK\n");
     Serial.printf("\nRead data from EEPROM...\n");
     // set up eeprom data
@@ -350,6 +361,13 @@ Serial.printf("\nStart Task...\n");
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
     Serial.printf("\nTASK1:get_data...\n");
+
+
+
+
+
+
+
 
     // init websocket
     Serial.println("WebSocket started!");

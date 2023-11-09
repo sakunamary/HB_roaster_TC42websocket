@@ -15,6 +15,19 @@
 #define TX 10
 #define RX  9
 
+//pinout setting
+#define ENC_CLK  33
+#define ENC_DT   32
+#define PWM_ROLL 27
+#define PWM_FAN  26
+#define PWM_HEAT 14
+
+
+
+//pwm setting 
+#define PWM_FREQ 2500
+#define PWM_RESOLUTION 12 //0-4096
+
 // 网页设置的参数
  typedef struct eeprom_settings 
 {
@@ -25,6 +38,11 @@
 
 extern user_wifi_t  user_wifi ;
 
+//pwm object 
+Pwm pwm = Pwm();
+
+// rotary encoder object
+ESP32Encoder encoder;
 //定义artisan 交互的数组
 typedef struct  data_to_artisan {
     double BT;
