@@ -13,17 +13,18 @@
 #include <StringTokenizer.h>
 //#include <WebSerial.h>
 //
-//#include "SoftwareSerial.h"
+
 #include "ArduinoJson.h"
-//#include "task_get_data.h"
-//#include "task_send_data.h"
+
+#include <pwmWrite.h>
+#include <ESP32Encoder.h>
 
 
 
 
 //SoftwareSerial Serial_in ;
 //spSoftwareSerial::UART Serial_in;// D10 RX_drumer  D9 TX_drumer 
- HardwareSerial Serial_in(1);
+ HardwareSerial Serial_in(2);
 SemaphoreHandle_t xThermoDataMutex = NULL;
 
 AsyncWebServer server(80);
@@ -38,11 +39,34 @@ String MsgString;
 
 String MSG_token1300[4];
 String MSG_token2400[4];
+long timestamp;
+uint16_t  heat_from_Artisan = 0;
+uint16_t  heat_from_enc  = 0;
 
+user_wifi_t user_wifi = {
+                        " ", //char ssid[60]; //增加到30个字符
+                        " ", //char password[60]; //增加到30个字符
+                        PWM_FREQ,//int PWM_FREQ_HEAT;
+                        false //bool   Init_mode ; //是否初始化模式
+                        };
 
-user_wifi_t user_wifi = {" ", " ", false};
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0};
 
+//const uint32_t frequency = PWM_FREQ;
+const byte resolution = PWM_RESOLUTION; //pwm -0-4096
+
+//Coil Pins
+const int HEAT_OUT_PIN = PWM_HEAT; //GPIO14
+
+
+int encoder_postion ;
+
+
+//pwm object 
+Pwm pwm = Pwm();
+
+// rotary encoder object
+ESP32Encoder encoder;
 
 TaskHandle_t xHandle_indicator;
 
@@ -120,6 +144,23 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                     String command = doc["command"].as<  const char *>();
                     // Serial_debug.printf("Command received: %s \n",command);
                     long ln_id = doc["id"].as<long>();
+
+                  if(!doc["HeatVal"].isNull()) //发送Heat level
+                    {
+                      heat_from_Artisan = doc["HeatVal"].as<long>();
+
+                        if (heat_from_Artisan >0 && heat_from_Artisan < 101
+                           &&  (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) )
+                           {//给温度数组的最后一个数值写入数据   ){// 过滤TargetC -1 和 大于100 值。
+              
+                            To_artisan.heat_level=heat_from_Artisan;
+                            
+                            xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+                        }    
+            }  
+
+
+
                     // Send Values to Artisan over Websocket
                     JsonObject root = doc.to<JsonObject>();
                     JsonObject data = root.createNestedObject("data");
@@ -136,13 +177,29 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                         root["id"] = ln_id;
                         data["ET"] = To_artisan.ET;
                     }
+                    else if (command == "getInlet")
+                    {
+                        root["id"] = ln_id;
+                        data["Inlet"] = To_artisan.inlet;
+                    }
+                    else if (command == "getAP")
+                    {
+                        root["id"] = ln_id;
+                        data["AP"] = To_artisan.AP;
+                    }
+                    else if (command == "getHEAT")
+                    {
+                        root["id"] = ln_id;
+                        data["HEAT"] = To_artisan.heat_level;
+                    }
                     else if (command == "getData")
                     {
                         root["id"] = ln_id;
                         data["BT"] = To_artisan.BT;
                         data["ET"] = To_artisan.ET;
                         data["AP"] = To_artisan.AP;
-                        data["inlet"] = To_artisan.inlet;                         
+                        data["Inlet"] = To_artisan.inlet;     
+                        data["HEAT"] = To_artisan.heat_level;                   
                     }
 
                     xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
@@ -269,7 +326,7 @@ void setup() {
 
     xThermoDataMutex = xSemaphoreCreateMutex();
 
-
+    pinMode(HEAT_OUT_PIN, OUTPUT);
 
   //初始化网络服务
     WiFi.mode(WIFI_STA);
@@ -306,7 +363,7 @@ void setup() {
         ; // wait for serial port ready
     }
 
-    Serial.printf("\nTC4-WB  STARTING...\n");
+    Serial.printf("\nHB_WIFI  STARTING...\n");
     Serial.printf("\nSerial_in setup OK\n");
     Serial.printf("\nRead data from EEPROM...\n");
     // set up eeprom data
@@ -319,6 +376,7 @@ if (user_wifi.Init_mode)
 {
     strcat(user_wifi.ssid,"HB_WIFI");
     strcat(user_wifi.password,"12345678");
+    user_wifi.PWM_FREQ_HEAT = PWM_FREQ;
     user_wifi.Init_mode = false ;
     EEPROM.put(0, user_wifi);
     EEPROM.commit();
@@ -350,6 +408,13 @@ Serial.printf("\nStart Task...\n");
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
     Serial.printf("\nTASK1:get_data...\n");
+
+
+
+
+
+
+
 
     // init websocket
     Serial.println("WebSocket started!");
@@ -427,6 +492,26 @@ Serial.printf("\nStart Task...\n");
 
   server.begin();
   Serial.println("HTTP server started");
+
+  //Init pwm output
+    pwm.pause();
+    pwm.write(HEAT_OUT_PIN, 0, user_wifi.PWM_FREQ_HEAT, resolution);
+  
+    pwm.resume();
+    pwm.printDebug();
+
+    Serial.println("PWM started");  
+   // analogReadResolution(10); //0-1024
+
+
+    Serial.printf("\nStart INPUT ENCODER  service...\n");
+
+//init ENCODER
+  encoder.attachHalfQuad( ENC_CLK,ENC_DT);
+  encoder.setCount ( 0 );
+  Serial.println("Encoder started");  
+
+timestamp=millis();
 
 }
 
