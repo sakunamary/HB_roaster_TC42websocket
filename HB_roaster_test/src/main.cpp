@@ -24,7 +24,7 @@
 
 //SoftwareSerial Serial_in ;
 //spSoftwareSerial::UART Serial_in;// D10 RX_drumer  D9 TX_drumer 
- HardwareSerial Serial_in(1);
+ HardwareSerial Serial_in(2);
 SemaphoreHandle_t xThermoDataMutex = NULL;
 
 AsyncWebServer server(80);
@@ -39,15 +39,28 @@ String MsgString;
 
 String MSG_token1300[4];
 String MSG_token2400[4];
+long timestamp;
+uint16_t  heat_from_Hreg = 0;
+uint16_t  heat_from_enc  = 0;
 
+user_wifi_t user_wifi = {
+                        " ", //char ssid[60]; //增加到30个字符
+                        " ", //char password[60]; //增加到30个字符
+                        PWM_FREQ,//int PWM_FREQ_HEAT;
+                        false //bool   Init_mode ; //是否初始化模式
+                        };
 
-user_wifi_t user_wifi = {" ", " ", false};
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0};
 
 //const uint32_t frequency = PWM_FREQ;
 const byte resolution = PWM_RESOLUTION; //pwm -0-4096
 
+//Coil Pins
+const int HEAT_OUT_PIN = PWM_HEAT; //GPIO14
+
+
 int encoder_postion ;
+
 
 //pwm object 
 Pwm pwm = Pwm();
@@ -280,7 +293,7 @@ void setup() {
 
     xThermoDataMutex = xSemaphoreCreateMutex();
 
-
+    pinMode(HEAT_OUT_PIN, OUTPUT);
 
   //初始化网络服务
     WiFi.mode(WIFI_STA);
@@ -330,6 +343,7 @@ if (user_wifi.Init_mode)
 {
     strcat(user_wifi.ssid,"HB_WIFI");
     strcat(user_wifi.password,"12345678");
+    user_wifi.PWM_FREQ_HEAT = PWM_FREQ;
     user_wifi.Init_mode = false ;
     EEPROM.put(0, user_wifi);
     EEPROM.commit();
@@ -445,6 +459,26 @@ Serial.printf("\nStart Task...\n");
 
   server.begin();
   Serial.println("HTTP server started");
+
+  //Init pwm output
+    pwm.pause();
+    pwm.write(HEAT_OUT_PIN, 0, user_wifi.PWM_FREQ_HEAT, resolution);
+  
+    pwm.resume();
+    pwm.printDebug();
+
+    Serial.println("PWM started");  
+   // analogReadResolution(10); //0-1024
+
+
+    Serial.printf("\nStart INPUT ENCODER  service...\n");
+
+//init ENCODER
+  encoder.attachHalfQuad( ENC_CLK,ENC_DT);
+  encoder.setCount ( 0 );
+  Serial.println("Encoder started");  
+
+timestamp=millis();
 
 }
 

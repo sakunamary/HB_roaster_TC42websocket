@@ -12,15 +12,14 @@
 
 
 #define DEBUG_MODE
-#define TX 10
-#define RX  9
+#define TX 16
+#define RX 17
 
 //pinout setting
-#define ENC_CLK  33
-#define ENC_DT   32
-#define PWM_ROLL 27
-#define PWM_FAN  26
-#define PWM_HEAT 14
+#define ENC_CLK  32
+#define ENC_DT   33
+#define PWM_HEAT     26
+
 
 
 
@@ -33,22 +32,20 @@
 {
   char ssid[60]; //增加到30个字符
   char password[60]; //增加到30个字符
+  int PWM_FREQ_HEAT;
   bool   Init_mode ; //是否初始化模式
 } user_wifi_t;
 
 extern user_wifi_t  user_wifi ;
 
-//pwm object 
-Pwm pwm = Pwm();
 
-// rotary encoder object
-ESP32Encoder encoder;
 //定义artisan 交互的数组
 typedef struct  data_to_artisan {
     double BT;
     double ET;
     double  AP;
     double inlet;
+    int heat_level;
 /*
             AT = float(res1300[0])
             ET = float(res1300[1])
