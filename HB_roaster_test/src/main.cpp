@@ -40,7 +40,7 @@ String MsgString;
 String MSG_token1300[4];
 String MSG_token2400[4];
 long timestamp;
-uint16_t  heat_from_Hreg = 0;
+uint16_t  heat_from_Artisan = 0;
 uint16_t  heat_from_enc  = 0;
 
 user_wifi_t user_wifi = {
@@ -144,6 +144,22 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                     String command = doc["command"].as<  const char *>();
                     // Serial_debug.printf("Command received: %s \n",command);
                     long ln_id = doc["id"].as<long>();
+
+                  if(!doc["HeatVal"].isNull()) // 自动传输背景温度值
+                    {
+                      heat_from_Artisan = doc["HeatVal"].as<long>();
+
+                        if (heat_from_Artisan >0 && heat_from_Artisan < 101
+                           &&  (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) )
+                           {//给温度数组的最后一个数值写入数据   ){// 过滤TargetC -1 和 大于100 值。
+              
+                            To_artisan.heat_level=heat_from_Artisan;
+                            xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+                        }    
+            }  
+
+
+
                     // Send Values to Artisan over Websocket
                     JsonObject root = doc.to<JsonObject>();
                     JsonObject data = root.createNestedObject("data");
@@ -160,13 +176,29 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                         root["id"] = ln_id;
                         data["ET"] = To_artisan.ET;
                     }
+                    else if (command == "getInlet")
+                    {
+                        root["id"] = ln_id;
+                        data["Inlet"] = To_artisan.inlet;
+                    }
+                    else if (command == "getAP")
+                    {
+                        root["id"] = ln_id;
+                        data["AP"] = To_artisan.AP;
+                    }
+                    else if (command == "getHEAT")
+                    {
+                        root["id"] = ln_id;
+                        data["HEAT"] = To_artisan.heat_level;
+                    }
                     else if (command == "getData")
                     {
                         root["id"] = ln_id;
                         data["BT"] = To_artisan.BT;
                         data["ET"] = To_artisan.ET;
                         data["AP"] = To_artisan.AP;
-                        data["inlet"] = To_artisan.inlet;                         
+                        data["Inlet"] = To_artisan.inlet;     
+                        data["HEAT"] = To_artisan.heat_level;                   
                     }
 
                     xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
