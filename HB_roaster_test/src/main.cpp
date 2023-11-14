@@ -378,7 +378,7 @@ void setup() {
     EEPROM.begin(sizeof(user_wifi));
     EEPROM.get(0, user_wifi);
 
- //user_wifi.Init_mode = true ;
+ user_wifi.Init_mode = true ;
 
 if (user_wifi.Init_mode) 
 {
@@ -409,7 +409,7 @@ Serial.printf("\nStart Task...\n");
     xTaskCreatePinnedToCore(
         task_get_data, "get_data" // 获取HB数据
         ,
-        1024 // This stack size can be checked & adjusted by reading the Stack Highwater
+        4096 // This stack size can be checked & adjusted by reading the Stack Highwater
         ,
         NULL, 1 // Priority, with 1 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
         ,
@@ -530,7 +530,7 @@ Serial.printf("\nStart Task...\n");
 
 void loop() {
 
-
+ const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
 // pwm output level 
 //    PC                                        MCU-value                   ENCODER read
 //Artisan-> heat_from_Artisan        >>    To_artisan.heat_level     <<     heat_from_enc
@@ -549,7 +549,7 @@ if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//给温度数组的
 
 
 
-       } else if (heat_from_enc l>= 100 ){//如果输入大于100值，自动限制在100
+       } else if (heat_from_enc >= 100 ){//如果输入大于100值，自动限制在100
             heat_from_enc = 100; 
             heat_from_Artisan= heat_from_enc;
             To_artisan.heat_level = heat_from_Artisan;
@@ -560,7 +560,7 @@ if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//给温度数组的
            }
        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
 }
-       pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,100,0,4096), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
+       pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,0,4096), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
  
 
 }
