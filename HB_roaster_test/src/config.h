@@ -24,7 +24,7 @@
 
 
 //pwm setting 
-#define PWM_FREQ 100000
+#define PWM_FREQ 10000
 #define PWM_RESOLUTION 12 //0-4096
 
 // 网页设置的参数

@@ -509,9 +509,7 @@ Serial.printf("\nStart Task...\n");
     pwm.printDebug();
 
     Serial.println("PWM started");  
-   // analogReadResolution(10); //0-1024
-
-
+   
     Serial.printf("\nStart INPUT ENCODER  service...\n");
 
 //init ENCODER
@@ -522,7 +520,6 @@ Serial.printf("\nStart Task...\n");
   encoder.clearCount();
   encoder.setFilter(99);
   encoder.setCount ( 0 );
-  Serial.println("Encoder started");  
   esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
   Serial.println("Encoder started");  
 
