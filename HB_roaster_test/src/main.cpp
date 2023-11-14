@@ -18,7 +18,7 @@
 
 #include <pwmWrite.h>
 #include <ESP32Encoder.h>
-
+#include "esp_task_wdt.h"
 
 
 
@@ -39,7 +39,8 @@ String MsgString;
 
 String MSG_token1300[4];
 String MSG_token2400[4];
-long timestamp;
+
+
 uint16_t  heat_from_Artisan = 0;
 uint16_t  heat_from_enc  = 0;
 
@@ -52,17 +53,30 @@ user_wifi_t user_wifi = {
 
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0};
 
-
-// pwm output level 
-//    PC                                        MCU-value                   ENCODER read
-//Artisan-> heat_from_Artisan        >>    To_artisan.heat_level     <<     heat_from_enc
-//  heat_from_Artisan == heat_from_enc  in loop（） 
+extern bool loopTaskWDTEnabled;
+extern TaskHandle_t loopTaskHandle;
 
 const uint32_t frequency = PWM_FREQ;
 const byte resolution = PWM_RESOLUTION; //pwm -0-4096
 
 //Coil Pins
 const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
+
+
+
+void notFound(AsyncWebServerRequest *request);    
+void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);//Handle WebSocket event
+void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){}
+String IpAddressToString(const IPAddress &ipAddress);      
+
+
+static IRAM_ATTR void enc_cb(void* arg) {
+  ESP32Encoder* enc = (ESP32Encoder*) arg;
+  //Serial.printf("enc cb: count: %d\n", enc->getCount());
+//   static bool leds = false;
+//   digitalWrite(LED_BUILTIN, (int)leds);
+//   leds = !leds;
+}
 
 
 int encoder_postion ;
@@ -72,15 +86,7 @@ int encoder_postion ;
 Pwm pwm = Pwm();
 
 // rotary encoder object
-ESP32Encoder encoder;
-
-TaskHandle_t xHandle_indicator;
-
-void notFound(AsyncWebServerRequest *request);    
-void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);//Handle WebSocket event
-void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){}
-String IpAddressToString(const IPAddress &ipAddress);      
-
+ESP32Encoder encoder(true, enc_cb);
 
 
 String IpAddressToString(const IPAddress &ipAddress)
@@ -313,11 +319,6 @@ void task_get_data(void *pvParameters)
                 
             MsgString = "";
             i=0;   
-
-
-
-
-
                 vTaskDelayUntil(&xLastWakeTime, xIntervel);
 
     }
@@ -331,7 +332,7 @@ void task_get_data(void *pvParameters)
 void setup() {
 
     xThermoDataMutex = xSemaphoreCreateMutex();
-
+    loopTaskWDTEnabled = true;
     pinMode(HEAT_OUT_PIN, OUTPUT); 
 
   //初始化网络服务
@@ -361,6 +362,7 @@ void setup() {
     Serial.begin(BAUDRATE);
     //Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,10,9); //RX  TX
     Serial_in.begin(BAUDRATE, SERIAL_8N1, RXD, TXD);
+
 
 
 
@@ -465,7 +467,7 @@ Serial.printf("\nStart Task...\n");
                         request->send(response);
                         },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
                         if(!index){
-                        vTaskSuspend(xHandle_indicator); //停止显示
+                        //vTaskSuspend(xHandle_indicator); //停止显示
                         Serial.printf("Update Start: %s\n", filename.c_str());
 
                         if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)){
@@ -513,35 +515,52 @@ Serial.printf("\nStart Task...\n");
     Serial.printf("\nStart INPUT ENCODER  service...\n");
 
 //init ENCODER
-  encoder.attachHalfQuad( ENC_CLK,ENC_DT);
+
+
+  ESP32Encoder::useInternalWeakPullResistors=UP;
+  encoder.attachSingleEdge(ENC_CLK, ENC_DT);
+  encoder.clearCount();
+  encoder.setFilter(99);
   encoder.setCount ( 0 );
   Serial.println("Encoder started");  
-
-timestamp=millis();
+  esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
+  Serial.println("Encoder started");  
 
 }
 
 void loop() {
 
-   if (millis() > timestamp + 100) {
-       timestamp = millis();
-       //HEAT 控制部分 
-       if (heat_from_Artisan <= 0 ) { //如果输入小于0值，自动限制在0
-            heat_from_Artisan = 0;
 
-       } else if (heat_from_Artisan>= 100 ){//如果输入大于100值，自动限制在100
-            heat_from_Artisan = 100;
+// pwm output level 
+//    PC                                        MCU-value                   ENCODER read
+//Artisan-> heat_from_Artisan        >>    To_artisan.heat_level     <<     heat_from_enc
+//  heat_from_Artisan == heat_from_enc  in loop（） 
+
+
+   heat_from_enc = encoder.getCount() ;  // 获取编码器数据
+
+if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//给温度数组的最后一个数值写入数据   
+
+       //HEAT 控制部分 
+       if (heat_from_enc<= 0 ) { //如果输入小于0值，自动限制在0
+            heat_from_enc = 0; 
+            heat_from_Artisan= heat_from_enc;
+            To_artisan.heat_level = heat_from_Artisan;
+
+
+
+       } else if (heat_from_enc l>= 100 ){//如果输入大于100值，自动限制在100
+            heat_from_enc = 100; 
+            heat_from_Artisan= heat_from_enc;
+            To_artisan.heat_level = heat_from_Artisan;
 
        } else {
-            heat_from_Hreg = mb.Hreg(HEAT_HREG); //自动模式下，从寄存器获取heat的数值
-            encoder.setCount(heat_from_Hreg); //同步encoder的步进数。
-       }
-
-       heat_from_enc = heat_from_Artisan ; //自动模式下，同步数据到encoder
-   }
-
-
-       pwm.write(HEAT_OUT_PIN, map(heat_from_Hreg,0,100,0,4096), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
+ 
+            To_artisan.heat_level = heat_from_enc;
+           }
+       xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+}
+       pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,100,0,4096), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
  
 
 }
