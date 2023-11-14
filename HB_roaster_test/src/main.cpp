@@ -378,7 +378,7 @@ void setup() {
     EEPROM.begin(sizeof(user_wifi));
     EEPROM.get(0, user_wifi);
 
- user_wifi.Init_mode = true ;
+ //user_wifi.Init_mode = true ;
 
 if (user_wifi.Init_mode) 
 {
