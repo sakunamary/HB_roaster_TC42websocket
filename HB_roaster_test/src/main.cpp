@@ -50,23 +50,19 @@ user_wifi_t user_wifi = {
                         false //bool   Init_mode ; //是否初始化模式
                         };
 
-data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0
+data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0};
 
 
+// pwm output level 
+//    PC                                        MCU-value                   ENCODER read
+//Artisan-> heat_from_Artisan        >>    To_artisan.heat_level     <<     heat_from_enc
+//  heat_from_Artisan == heat_from_enc  in loop（） 
 
-
-
-
-
-
-
-};
-
-//const uint32_t frequency = PWM_FREQ;
+const uint32_t frequency = PWM_FREQ;
 const byte resolution = PWM_RESOLUTION; //pwm -0-4096
 
 //Coil Pins
-const int HEAT_OUT_PIN = PWM_HEAT; //GPIO14
+const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
 
 
 int encoder_postion ;
@@ -336,7 +332,7 @@ void setup() {
 
     xThermoDataMutex = xSemaphoreCreateMutex();
 
-    pinMode(HEAT_OUT_PIN, OUTPUT);
+    pinMode(HEAT_OUT_PIN, OUTPUT); 
 
   //初始化网络服务
     WiFi.mode(WIFI_STA);
@@ -364,7 +360,7 @@ void setup() {
 
     Serial.begin(BAUDRATE);
     //Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,10,9); //RX  TX
-    Serial_in.begin(BAUDRATE, SERIAL_8N1, RX, TX);
+    Serial_in.begin(BAUDRATE, SERIAL_8N1, RXD, TXD);
 
 
 
@@ -409,7 +405,7 @@ Serial.printf("\nStart Task...\n");
     /*---------- Task Definition ---------------------*/
     // Setup tasks to run independently.
     xTaskCreatePinnedToCore(
-        task_get_data, "get_data" // 测量电池电源数据，每分钟测量一次
+        task_get_data, "get_data" // 获取HB数据
         ,
         1024 // This stack size can be checked & adjusted by reading the Stack Highwater
         ,
@@ -527,5 +523,25 @@ timestamp=millis();
 
 void loop() {
 
+   if (millis() > timestamp + 100) {
+       timestamp = millis();
+       //HEAT 控制部分 
+       if (heat_from_Artisan <= 0 ) { //如果输入小于0值，自动限制在0
+            heat_from_Artisan = 0;
+
+       } else if (heat_from_Artisan>= 100 ){//如果输入大于100值，自动限制在100
+            heat_from_Artisan = 100;
+
+       } else {
+            heat_from_Hreg = mb.Hreg(HEAT_HREG); //自动模式下，从寄存器获取heat的数值
+            encoder.setCount(heat_from_Hreg); //同步encoder的步进数。
+       }
+
+       heat_from_enc = heat_from_Artisan ; //自动模式下，同步数据到encoder
+   }
+
+
+       pwm.write(HEAT_OUT_PIN, map(heat_from_Hreg,0,100,0,4096), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
+ 
 
 }

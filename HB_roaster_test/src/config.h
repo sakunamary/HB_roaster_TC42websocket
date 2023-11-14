@@ -12,19 +12,19 @@
 
 
 #define DEBUG_MODE
-#define TX 16
-#define RX 17
+#define TXD 16
+#define RXD 17
 
 //pinout setting
 #define ENC_CLK  32
 #define ENC_DT   33
-#define PWM_HEAT     26
+#define PWM_HEAT 26
 
 
 
 
 //pwm setting 
-#define PWM_FREQ 2500
+#define PWM_FREQ 100000
 #define PWM_RESOLUTION 12 //0-4096
 
 // 网页设置的参数
