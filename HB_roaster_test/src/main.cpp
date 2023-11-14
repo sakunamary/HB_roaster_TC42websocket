@@ -50,7 +50,17 @@ user_wifi_t user_wifi = {
                         false //bool   Init_mode ; //是否初始化模式
                         };
 
-data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0};
+data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0
+
+
+
+
+
+
+
+
+
+};
 
 //const uint32_t frequency = PWM_FREQ;
 const byte resolution = PWM_RESOLUTION; //pwm -0-4096
@@ -154,7 +164,7 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                            {//给温度数组的最后一个数值写入数据   ){// 过滤TargetC -1 和 大于100 值。
               
                             To_artisan.heat_level=heat_from_Artisan;
-                            
+
                             xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
                         }    
             }  
