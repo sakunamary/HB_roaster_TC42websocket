@@ -328,10 +328,7 @@ void setup() {
         // show AP's IP
     }
 
-#if defined(DEBUG_MODE)
     Serial.begin(BAUDRATE);
-#endif
-
     Serial_in.begin(BAUDRATE, SERIAL_8N1, RXD, TXD);
 
     // while (!Serial_in )
@@ -438,6 +435,7 @@ Serial.printf("\nStart Task...\n");
                         },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
                         if(!index){
                         //vTaskSuspend(xHandle_indicator); //停止显示
+            
                         Serial.printf("Update Start: %s\n", filename.c_str());
 
                         if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)){
