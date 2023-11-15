@@ -11,8 +11,7 @@
 #include <HardwareSerial.h>
 
 #include <StringTokenizer.h>
-//#include <WebSerial.h>
-//
+
 
 #include "ArduinoJson.h"
 
@@ -20,11 +19,7 @@
 #include <ESP32Encoder.h>
 #include "esp_task_wdt.h"
 
-
-
-//SoftwareSerial Serial_in ;
-//spSoftwareSerial::UART Serial_in;// D10 RX_drumer  D9 TX_drumer 
- HardwareSerial Serial_in(2);
+HardwareSerial Serial_in(2);
 SemaphoreHandle_t xThermoDataMutex = NULL;
 
 AsyncWebServer server(80);
@@ -73,13 +68,7 @@ String IpAddressToString(const IPAddress &ipAddress);
 
 static IRAM_ATTR void enc_cb(void* arg) {
   ESP32Encoder* enc = (ESP32Encoder*) arg;
-//   //Serial.printf("enc cb: count: %d\n", enc->getCount());
-//   static bool leds = false;
-//   digitalWrite(LED_BUILTIN, (int)leds);
-//   leds = !leds;
 }
-//int encoder_postion ;
-
 
 //pwm object 
 Pwm pwm = Pwm();
@@ -160,15 +149,13 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                     {
                       heat_from_Artisan = doc["HeatVal"].as<long>();
 
-                        if (heat_from_Artisan >0 && heat_from_Artisan < 100
+                        if (heat_from_Artisan >=0 && heat_from_Artisan <= 100
                            &&  (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) )
                            {//给温度数组的最后一个数值写入数据   ){// 过滤TargetC -1 和 大于100 值。
                             To_artisan.heat_level=heat_from_Artisan;
                             xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
                         }    
             }  
-
-
 
                     // Send Values to Artisan over Websocket
                     JsonObject root = doc.to<JsonObject>();
@@ -243,9 +230,6 @@ void task_get_data(void *pvParameters)
     TickType_t xLastWakeTime;
 
     const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
-
-
-   //const TickType_t xIntervel = (2 * 1000) / portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -266,12 +250,6 @@ void task_get_data(void *pvParameters)
                 MsgString = Serial_in.readStringUntil('C');
                 MsgString.concat('C');
             } 
-/*
-            Serial.println("read from drummer:");
-            Serial.println(MsgString);
-*/
-
-
             while(tokens.hasNext()){
                    MSG_token1300[i]=tokens.nextToken(); // prints the next token in the string
                   // Serial.println(MSG_token[i]);
@@ -282,8 +260,7 @@ void task_get_data(void *pvParameters)
                 {//lock the  mutex    
                     To_artisan.BT = MSG_token1300[1].toFloat();
                     To_artisan.ET = MSG_token1300[2].toFloat();
-
-                        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+             xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
                 }   
                 
             MsgString = "";
@@ -322,10 +299,6 @@ void task_get_data(void *pvParameters)
 }//function 
 
 
-
-
-
-
 void setup() {
 
     xThermoDataMutex = xSemaphoreCreateMutex();
@@ -341,7 +314,7 @@ void setup() {
     {
 
         delay(1000);
-        Serial.println("wifi not ready");
+       // Serial.println("wifi not ready");
 
         if (tries++ > 7)
         {
@@ -355,39 +328,41 @@ void setup() {
         // show AP's IP
     }
 
-
+#if defined(DEBUG_MODE)
     Serial.begin(BAUDRATE);
-    //Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,10,9); //RX  TX
+#endif
+
     Serial_in.begin(BAUDRATE, SERIAL_8N1, RXD, TXD);
 
+    // while (!Serial_in )
+    // {
+    //     ; // wait for serial port ready
+    // }
 
-
-
-    while (!Serial)
-    {
-        ; // wait for serial port ready
-    }
-
+#if defined(DEBUG_MODE)
     Serial.printf("\nHB_WIFI  STARTING...\n");
     Serial.printf("\nSerial_in setup OK\n");
     Serial.printf("\nRead data from EEPROM...\n");
+#endif
+
     // set up eeprom data
     EEPROM.begin(sizeof(user_wifi));
     EEPROM.get(0, user_wifi);
 
- //user_wifi.Init_mode = true ;
+//  //user_wifi.Init_mode = true ;
 
-if (user_wifi.Init_mode) 
-{
-    strcat(user_wifi.ssid,"HB_WIFI");
-    strcat(user_wifi.password,"12345678");
-    user_wifi.PWM_FREQ_HEAT = PWM_FREQ;
-    user_wifi.Init_mode = false ;
-    EEPROM.put(0, user_wifi);
-    EEPROM.commit();
-}
-
+// if (user_wifi.Init_mode) 
+// {
+//     strcat(user_wifi.ssid,"HB_WIFI");
+//     strcat(user_wifi.password,"12345678");
+//     user_wifi.PWM_FREQ_HEAT = PWM_FREQ;
+//     user_wifi.Init_mode = false ;
+//     EEPROM.put(0, user_wifi);
+//     EEPROM.commit();
+// }
+#if defined(DEBUG_MODE)
     Serial.print("HB_WIFI's IP:");
+#endif
 
     if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
     {
@@ -399,8 +374,10 @@ if (user_wifi.Init_mode)
         Serial.println(IpAddressToString(WiFi.localIP()));
         local_IP = IpAddressToString(WiFi.localIP());
     }
-
+#if defined(DEBUG_MODE)
 Serial.printf("\nStart Task...\n");
+#endif
+
     /*---------- Task Definition ---------------------*/
     // Setup tasks to run independently.
     xTaskCreatePinnedToCore(
@@ -412,11 +389,13 @@ Serial.printf("\nStart Task...\n");
         ,
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
+
+#if defined(DEBUG_MODE)
     Serial.printf("\nTASK1:get_data...\n");
-
-
     // init websocket
     Serial.println("WebSocket started!");
+#endif
+
     // attach AsyncWebSocket
     ws.onEvent(onEvent);
     server.addHandler(&ws);
@@ -490,18 +469,20 @@ Serial.printf("\nStart Task...\n");
     server.onFileUpload(onUpload);
 
   server.begin();
+#if defined(DEBUG_MODE)
   Serial.println("HTTP server started");
-
+#endif
   //Init pwm output
     pwm.pause();
     pwm.write(HEAT_OUT_PIN, 0, user_wifi.PWM_FREQ_HEAT, resolution);
   
     pwm.resume();
-    pwm.printDebug();
+    //pwm.printDebug();
 
-    Serial.println("PWM started");  
-   
+#if defined(DEBUG_MODE)
+    Serial.println("PWM started");     
     Serial.printf("\nStart INPUT ENCODER  service...\n");
+#endif
 
 //init ENCODER
 	// Enable the weak pull up resistors
@@ -510,8 +491,11 @@ Serial.printf("\nStart Task...\n");
     encoder.clearCount();
     encoder.setFilter(1023);
     esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
+
+#if defined(DEBUG_MODE)
     Serial.println("Encoder started"); 
     Serial.printf("Encoder now count: %d\n", encoder.getCount()); 
+#endif
 
 }
 
@@ -551,7 +535,7 @@ if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//给温度数组的
            }
        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
 }
-       pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,0,4096), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
+pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,0,4096), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
  
   //Serial.printf("heat_from_Artisan: %d\n", heat_from_Artisan);
   //Serial.printf("To_artisan.heat_level: %d\n", To_artisan.heat_level);
