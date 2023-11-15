@@ -41,8 +41,8 @@ String MSG_token1300[4];
 String MSG_token2400[4];
 
 
-uint16_t  heat_from_Artisan = 0;
-uint16_t  heat_from_enc  = 0;
+int16_t  heat_from_Artisan = 0;
+int16_t  heat_from_enc  = 0;
 
 user_wifi_t user_wifi = {
                         " ", //char ssid[60]; //增加到30个字符
@@ -70,23 +70,15 @@ void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uin
 String IpAddressToString(const IPAddress &ipAddress);      
 
 
+
 static IRAM_ATTR void enc_cb(void* arg) {
-
-TickType_t xLastWakeTime;
-const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
-ESP32Encoder* enc = (ESP32Encoder*) arg;
-
-
-Serial.printf("enc cb: count: %d\n", enc->getCount());
-heat_from_enc=enc->getCount();
-        if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//  
-        To_artisan.heat_level = heat_from_enc; //更新enc来的数据到To_artisan.heat_level 
-            xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
-        }
-        heat_from_Artisan = To_artisan.heat_level; //同步火力数据
+  ESP32Encoder* enc = (ESP32Encoder*) arg;
+//   //Serial.printf("enc cb: count: %d\n", enc->getCount());
+//   static bool leds = false;
+//   digitalWrite(LED_BUILTIN, (int)leds);
+//   leds = !leds;
 }
-
-int encoder_postion ;
+//int encoder_postion ;
 
 
 //pwm object 
@@ -127,7 +119,7 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
 
     const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
 
-    const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
+   const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
     DynamicJsonDocument doc(capacity);
 
     switch (type)
@@ -171,9 +163,7 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                         if (heat_from_Artisan >0 && heat_from_Artisan < 100
                            &&  (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) )
                            {//给温度数组的最后一个数值写入数据   ){// 过滤TargetC -1 和 大于100 值。
-              
                             To_artisan.heat_level=heat_from_Artisan;
-                            encoder.setCount(To_artisan.heat_level);
                             xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
                         }    
             }  
@@ -425,12 +415,6 @@ Serial.printf("\nStart Task...\n");
     Serial.printf("\nTASK1:get_data...\n");
 
 
-
-
-
-
-
-
     // init websocket
     Serial.println("WebSocket started!");
     // attach AsyncWebSocket
@@ -520,15 +504,14 @@ Serial.printf("\nStart Task...\n");
     Serial.printf("\nStart INPUT ENCODER  service...\n");
 
 //init ENCODER
-
-
-  ESP32Encoder::useInternalWeakPullResistors=UP;
-  encoder.attachSingleEdge(ENC_CLK, ENC_DT);
+	// Enable the weak pull up resistors
+	ESP32Encoder::useInternalWeakPullResistors=UP;
+  encoder.attachSingleEdge(ENC_DT, ENC_CLK);
   encoder.clearCount();
   encoder.setFilter(1023);
-  encoder.setCount ( To_artisan.heat_level );
   esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
-  Serial.println("Encoder started");  
+  Serial.println("Encoder started"); 
+  Serial.printf("Encoder now count: %d\n", encoder.getCount()); 
 
 }
 
@@ -539,32 +522,41 @@ void loop() {
 //    PC                                        MCU-value                   ENCODER read
 //Artisan-> heat_from_Artisan        >>    To_artisan.heat_level     <<     heat_from_enc
 //  heat_from_Artisan == heat_from_enc  in loop（） 
-// encoder 优先的代码
 
-   heat_from_enc = encoder.getCount() ;  // 获取编码器数据
-
+    heat_from_enc = encoder.getCount() ;  // 获取编码器数据
+ //Serial.printf("heat_from_enc: %d\n", heat_from_enc);
 if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//给温度数组的最后一个数值写入数据   
 
        //HEAT 控制部分 
-       if (heat_from_enc<= 0 ) { //如果输入小于0值，自动限制在0
-            heat_from_enc = 0; 
-            heat_from_Artisan= heat_from_enc;
-            To_artisan.heat_level = heat_from_Artisan;
+       if ((To_artisan.heat_level + heat_from_enc) <= 0 && To_artisan.heat_level >=0 ) { //如果输入小于0值，自动限制在0
+            
+            To_artisan.heat_level = 0;
+            heat_from_Artisan= To_artisan.heat_level ; 
+            encoder.clearCount();
+            heat_from_enc=0;
 
+       } else if ((To_artisan.heat_level + heat_from_enc) >= 100 && To_artisan.heat_level <= 100){//如果输入大于100值，自动限制在100
+             
+            To_artisan.heat_level = 100;
+            heat_from_Artisan= To_artisan.heat_level ; 
+            encoder.clearCount();
+            heat_from_enc=0;
 
-
-       } else if (heat_from_enc >= 100 ){//如果输入大于100值，自动限制在100
-            heat_from_enc = 100; 
-            heat_from_Artisan= heat_from_enc;
-            To_artisan.heat_level = heat_from_Artisan;
-
-       } else {
+       } else { //To_artisan.heat_level 加减 encoder的增减量，再同步到
  
-            To_artisan.heat_level = heat_from_enc;
+            To_artisan.heat_level = heat_from_enc + To_artisan.heat_level;
+            heat_from_Artisan= To_artisan.heat_level ; 
+            encoder.clearCount();
+            heat_from_enc=0;
            }
        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
 }
        pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,0,4096), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
  
+  //Serial.printf("heat_from_Artisan: %d\n", heat_from_Artisan);
+  Serial.printf("To_artisan.heat_level: %d\n", To_artisan.heat_level);
+
+
+delay(100);
 
 }
