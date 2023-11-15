@@ -11,7 +11,7 @@
 #define VERSION "1.0.0"
 
 
-#define DEBUG_MODE
+//#define DEBUG_MODE
 #define TXD 16
 #define RXD 17
 
