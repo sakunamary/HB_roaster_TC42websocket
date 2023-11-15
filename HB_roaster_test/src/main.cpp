@@ -206,9 +206,9 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                         root["id"] = ln_id;
                         data["BT"] = To_artisan.BT;
                         data["ET"] = To_artisan.ET;
-                        data["AP"] = To_artisan.AP;
+                       //#pragma region  data["AP"] = To_artisan.AP;
                         data["Inlet"] = To_artisan.inlet;     
-                        //data["HEAT"] = To_artisan.heat_level;                   
+                        data["HEAT"] = To_artisan.heat_level;                   
                     }
 
                     xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
