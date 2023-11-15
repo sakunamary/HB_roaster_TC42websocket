@@ -71,13 +71,20 @@ String IpAddressToString(const IPAddress &ipAddress);
 
 
 static IRAM_ATTR void enc_cb(void* arg) {
-  ESP32Encoder* enc = (ESP32Encoder*) arg;
-  //Serial.printf("enc cb: count: %d\n", enc->getCount());
-//   static bool leds = false;
-//   digitalWrite(LED_BUILTIN, (int)leds);
-//   leds = !leds;
-}
 
+TickType_t xLastWakeTime;
+const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+ESP32Encoder* enc = (ESP32Encoder*) arg;
+
+
+Serial.printf("enc cb: count: %d\n", enc->getCount());
+heat_from_enc=enc->getCount();
+        if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//  
+        To_artisan.heat_level = heat_from_enc; //更新enc来的数据到To_artisan.heat_level 
+            xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+        }
+        heat_from_Artisan = To_artisan.heat_level; //同步火力数据
+}
 
 int encoder_postion ;
 
@@ -161,12 +168,12 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                     {
                       heat_from_Artisan = doc["HeatVal"].as<long>();
 
-                        if (heat_from_Artisan >0 && heat_from_Artisan < 101
+                        if (heat_from_Artisan >0 && heat_from_Artisan < 100
                            &&  (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) )
                            {//给温度数组的最后一个数值写入数据   ){// 过滤TargetC -1 和 大于100 值。
               
                             To_artisan.heat_level=heat_from_Artisan;
-
+                            encoder.setCount(To_artisan.heat_level);
                             xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
                         }    
             }  
@@ -518,8 +525,8 @@ Serial.printf("\nStart Task...\n");
   ESP32Encoder::useInternalWeakPullResistors=UP;
   encoder.attachSingleEdge(ENC_CLK, ENC_DT);
   encoder.clearCount();
-  encoder.setFilter(99);
-  encoder.setCount ( 0 );
+  encoder.setFilter(1023);
+  encoder.setCount ( To_artisan.heat_level );
   esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
   Serial.println("Encoder started");  
 
@@ -532,7 +539,7 @@ void loop() {
 //    PC                                        MCU-value                   ENCODER read
 //Artisan-> heat_from_Artisan        >>    To_artisan.heat_level     <<     heat_from_enc
 //  heat_from_Artisan == heat_from_enc  in loop（） 
-
+// encoder 优先的代码
 
    heat_from_enc = encoder.getCount() ;  // 获取编码器数据
 
