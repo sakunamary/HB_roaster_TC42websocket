@@ -24,9 +24,7 @@
 
 
 
-//SoftwareSerial Serial_in ;
-//spSoftwareSerial::UART Serial_in;// D10 RX_drumer  D9 TX_drumer 
- HardwareSerial Serial_in(2);
+HardwareSerial Serial_in(2);
 SemaphoreHandle_t xThermoDataMutex = NULL;
 
 AsyncWebServer server(80);
@@ -86,12 +84,11 @@ String IpAddressToString(const IPAddress &ipAddress);
 
 static IRAM_ATTR void enc_cb(void* arg) {
   ESP32Encoder* enc = (ESP32Encoder*) arg;
-//   //Serial.printf("enc cb: count: %d\n", enc->getCount());
-//   static bool leds = false;
-//   digitalWrite(LED_BUILTIN, (int)leds);
-//   leds = !leds;
+
 }
-//int encoder_postion ;
+
+//ModbusIP object
+ModbusIP mb;
 
 
 //pwm object 
@@ -121,7 +118,7 @@ String processor(const String &var)
     
     return String();
 }
-
+/*
 void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
 
      //    {"command": "getData", "id": 93609, "roasterID": 0}
@@ -238,7 +235,7 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
     break;
     }
 }
-
+*/
 
 
 void notFound(AsyncWebServerRequest *request)
@@ -279,12 +276,6 @@ void task_get_data(void *pvParameters)
                 MsgString = Serial_in.readStringUntil('C');
                 MsgString.concat('C');
             } 
-/*
-            Serial.println("read from drummer:");
-            Serial.println(MsgString);
-*/
-
-
             while(tokens.hasNext()){
                    MSG_token1300[i]=tokens.nextToken(); // prints the next token in the string
                   // Serial.println(MSG_token[i]);
@@ -352,7 +343,7 @@ void setup() {
     {
 
         delay(1000);
-        Serial.println("wifi not ready");
+       // Serial.println("wifi not ready");
 
         if (tries++ > 7)
         {
@@ -366,39 +357,33 @@ void setup() {
         // show AP's IP
     }
 
-
-    Serial.begin(BAUDRATE);
-    //Serial_in.begin(BAUDRATE,EspSoftwareSerial::SWSERIAL_8N1,10,9); //RX  TX
     Serial_in.begin(BAUDRATE, SERIAL_8N1, RXD, TXD);
-
-
-
-
-    while (!Serial)
-    {
-        ; // wait for serial port ready
-    }
-
+#if defined(DEBUG_MODE)
+    Serial.begin(BAUDRATE);
     Serial.printf("\nHB_WIFI  STARTING...\n");
     Serial.printf("\nSerial_in setup OK\n");
     Serial.printf("\nRead data from EEPROM...\n");
+#endif
+
     // set up eeprom data
     EEPROM.begin(sizeof(user_wifi));
     EEPROM.get(0, user_wifi);
 
  //user_wifi.Init_mode = true ;
 
-if (user_wifi.Init_mode) 
-{
-    strcat(user_wifi.ssid,"HB_WIFI");
-    strcat(user_wifi.password,"12345678");
-    user_wifi.PWM_FREQ_HEAT = PWM_FREQ;
-    user_wifi.Init_mode = false ;
-    EEPROM.put(0, user_wifi);
-    EEPROM.commit();
-}
+// if (user_wifi.Init_mode) 
+// {
+//     strcat(user_wifi.ssid,"HB_WIFI");
+//     strcat(user_wifi.password,"12345678");
+//     user_wifi.PWM_FREQ_HEAT = PWM_FREQ;
+//     user_wifi.Init_mode = false ;
+//     EEPROM.put(0, user_wifi);
+//     EEPROM.commit();
+// }
+#if defined(DEBUG_MODE)
+   Serial.print("HB_WIFI's IP:");
+#endif
 
-    Serial.print("HB_WIFI's IP:");
 
     if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
     {
@@ -410,8 +395,9 @@ if (user_wifi.Init_mode)
         Serial.println(IpAddressToString(WiFi.localIP()));
         local_IP = IpAddressToString(WiFi.localIP());
     }
-
+#if defined(DEBUG_MODE)
 Serial.printf("\nStart Task...\n");
+#endif
     /*---------- Task Definition ---------------------*/
     // Setup tasks to run independently.
     xTaskCreatePinnedToCore(
@@ -423,14 +409,16 @@ Serial.printf("\nStart Task...\n");
         ,
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
+
+
     Serial.printf("\nTASK1:get_data...\n");
 
 
     // init websocket
     Serial.println("WebSocket started!");
     // attach AsyncWebSocket
-    ws.onEvent(onEvent);
-    server.addHandler(&ws);
+    //ws.onEvent(onEvent);
+    //server.addHandler(&ws);
 
 
 
@@ -470,7 +458,7 @@ Serial.printf("\nStart Task...\n");
                         },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
                         if(!index){
                         //vTaskSuspend(xHandle_indicator); //停止显示
-                        Serial.printf("Update Start: %s\n", filename.c_str());
+                      //  Serial.printf("Update Start: %s\n", filename.c_str());
 
                         if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)){
                             Update.printError(Serial);
@@ -483,14 +471,14 @@ Serial.printf("\nStart Task...\n");
                         }
                         if(final){
                         if(Update.end(true)){
-                            Serial.printf("Update Success: %uB\n", index+len);
-                            Serial.printf("ESP32 will reboot after 3s \n");
+                            //Serial.printf("Update Success: %uB\n", index+len);
+                           // Serial.printf("ESP32 will reboot after 3s \n");
                             vTaskDelay(3000);
                             ESP.restart();
 
                         } else {
                             Update.printError(Serial);
-                            Serial.printf("ESP32 will reboot after 3s \n");
+                            //Serial.printf("ESP32 will reboot after 3s \n");
                             vTaskDelay(3000);
                             ESP.restart();
                         }

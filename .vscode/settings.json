@@ -19,7 +19,10 @@
         "*.ipp": "cpp",
         "algorithm": "cpp",
         "functional": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "hash_map": "cpp",
+        "span": "cpp",
+        "format": "cpp"
     },
     "MicroPython.executeButton": [
         {
