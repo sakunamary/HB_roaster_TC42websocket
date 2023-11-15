@@ -20,6 +20,8 @@
 #include <ESP32Encoder.h>
 #include "esp_task_wdt.h"
 
+#include <ModbusIP_ESP8266.h>
+
 
 
 //SoftwareSerial Serial_in ;
@@ -29,7 +31,7 @@ SemaphoreHandle_t xThermoDataMutex = NULL;
 
 AsyncWebServer server(80);
 
-AsyncWebSocket ws("/websocket"); // access at ws://[esp ip]/
+//AsyncWebSocket ws("/websocket"); // access at ws://[esp ip]/
 
 char ap_name[30] ;
 uint8_t macAddr[6];
@@ -41,8 +43,10 @@ String MSG_token1300[4];
 String MSG_token2400[4];
 
 
-int16_t  heat_from_Artisan = 0;
-int16_t  heat_from_enc  = 0;
+
+uint16_t  heat_from_Hreg = 0;
+uint16_t  heat_from_enc  = 0;
+
 
 user_wifi_t user_wifi = {
                         " ", //char ssid[60]; //增加到30个字符
@@ -58,6 +62,15 @@ extern TaskHandle_t loopTaskHandle;
 
 const uint32_t frequency = PWM_FREQ;
 const byte resolution = PWM_RESOLUTION; //pwm -0-4096
+
+
+
+
+//Modbus Registers Offsets
+const int BT_HREG = 3001;
+const int ET_HREG = 3002;
+const int INLET_HREG = 3003;
+const int HEAT_HREG = 3004 ;
 
 //Coil Pins
 const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
@@ -309,8 +322,6 @@ void task_get_data(void *pvParameters)
             if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
                 {//lock the  mutex       
                     To_artisan.inlet = MSG_token2400[1].toFloat() ;
-
-
                         xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
                 }   
                 
