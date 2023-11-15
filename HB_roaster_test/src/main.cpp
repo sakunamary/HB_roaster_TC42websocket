@@ -208,7 +208,7 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                         data["ET"] = To_artisan.ET;
                         data["AP"] = To_artisan.AP;
                         data["Inlet"] = To_artisan.inlet;     
-                        data["HEAT"] = To_artisan.heat_level;                   
+                        //data["HEAT"] = To_artisan.heat_level;                   
                     }
 
                     xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
@@ -505,13 +505,13 @@ Serial.printf("\nStart Task...\n");
 
 //init ENCODER
 	// Enable the weak pull up resistors
-	ESP32Encoder::useInternalWeakPullResistors=UP;
-  encoder.attachSingleEdge(ENC_DT, ENC_CLK);
-  encoder.clearCount();
-  encoder.setFilter(1023);
-  esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
-  Serial.println("Encoder started"); 
-  Serial.printf("Encoder now count: %d\n", encoder.getCount()); 
+    ESP32Encoder::useInternalWeakPullResistors=UP;
+    encoder.attachSingleEdge(ENC_DT, ENC_CLK);
+    encoder.clearCount();
+    encoder.setFilter(1023);
+    esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
+    Serial.println("Encoder started"); 
+    Serial.printf("Encoder now count: %d\n", encoder.getCount()); 
 
 }
 
@@ -554,9 +554,9 @@ if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//给温度数组的
        pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,0,4096), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
  
   //Serial.printf("heat_from_Artisan: %d\n", heat_from_Artisan);
-  Serial.printf("To_artisan.heat_level: %d\n", To_artisan.heat_level);
+  //Serial.printf("To_artisan.heat_level: %d\n", To_artisan.heat_level);
 
 
-delay(100);
+delay(50);
 
 }
