@@ -511,6 +511,19 @@ Serial.printf("\nStart Task...\n");
     esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
     Serial.println("Encoder started"); 
     Serial.printf("Encoder now count: %d\n", encoder.getCount()); 
+//Init Modbus-TCP 
+
+    mb.server(502);		//Start Modbus IP //default port :502
+    // Add SENSOR_IREG register - Use addIreg() for analog Inputs
+    mb.addHreg(BT_HREG);
+    mb.addHreg(ET_HREG);
+    mb.addHreg(INLET_HREG);
+    mb.addHreg(HEAT_HREG);
+
+    mb.Hreg(HEAT_HREG,0); //初始化赋值
+    mb.Hreg(FAN_HREG,0);  //初始化赋值
+
+    Serial.printf("\nStart Modbus-TCP   service...\n");
 
 }
 
@@ -521,6 +534,11 @@ void loop() {
 //    PC                                        MCU-value                   ENCODER read
 //Artisan-> heat_from_Artisan        >>    To_artisan.heat_level     <<     heat_from_enc
 //  heat_from_Artisan == heat_from_enc  in loop（） 
+    mb.task();
+    mb.Hreg(BT_HREG,To_artisan.BT *100);
+    mb.Hreg(ET_HREG,To_artisan.ET *100);
+    mb.Hreg(INLET_HREG,To_artisan.inlet *100);
+
 
     heat_from_enc = encoder.getCount() ;  // 获取编码器数据
  //Serial.printf("heat_from_enc: %d\n", heat_from_enc);
