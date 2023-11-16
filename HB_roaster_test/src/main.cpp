@@ -523,9 +523,9 @@ Serial.printf("\nStart Task...\n");
     mb.addHreg(INLET_HREG);
     mb.addHreg(HEAT_HREG);
 
-    mb.Hreg(BT_HREG,1); //初始化赋值
-    mb.Hreg(ET_HREG,2);  //初始化赋值
-    mb.Hreg(INLET_HREG,3); //初始化赋值
+    mb.Hreg(BT_HREG,0); //初始化赋值
+    mb.Hreg(ET_HREG,0);  //初始化赋值
+    mb.Hreg(INLET_HREG,0); //初始化赋值
     mb.Hreg(HEAT_HREG,0);  //初始化赋值
 
 
@@ -549,8 +549,8 @@ void loop() {
 //  heat_from_Artisan == heat_from_enc  in loop（） 
 
 
-    heat_from_enc = encoder.getCount();
-    //heat_from_enc = encoder.getCount()-100 ;  // 获取编码器数据
+    heat_from_enc = encoder.getCount();123
+
 
  //Serial.printf("heat_from_enc: %d\n", heat_from_enc);
 
