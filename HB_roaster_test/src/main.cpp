@@ -506,7 +506,6 @@ Serial.printf("\nStart Task...\n");
 
     encoder.attachSingleEdge(ENC_DT, ENC_CLK);
     encoder.clearCount();
-    //encoder.setCount(100);
     encoder.setFilter(1023);
     esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
     Serial.println("Encoder started"); 
