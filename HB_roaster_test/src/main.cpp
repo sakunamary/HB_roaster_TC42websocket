@@ -522,6 +522,8 @@ Serial.printf("\nStart Task...\n");
 
     mb.Hreg(HEAT_HREG,0); //初始化赋值
     mb.Hreg(FAN_HREG,0);  //初始化赋值
+    mb.Hreg(INLET_HREG,0); //初始化赋值
+    mb.Hreg(HEAT_HREG,0);  //初始化赋值
 
     Serial.printf("\nStart Modbus-TCP   service...\n");
 
@@ -530,14 +532,20 @@ Serial.printf("\nStart Task...\n");
 void loop() {
 
  const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
-// pwm output level 
-//    PC                                        MCU-value                   ENCODER read
-//Artisan-> heat_from_Artisan        >>    To_artisan.heat_level     <<     heat_from_enc
-//  heat_from_Artisan == heat_from_enc  in loop（） 
+//更新寄存器数据
+
     mb.task();
     mb.Hreg(BT_HREG,To_artisan.BT *100);
     mb.Hreg(ET_HREG,To_artisan.ET *100);
     mb.Hreg(INLET_HREG,To_artisan.inlet *100);
+    mb.Hreg(HEAT_HREG,To_artisan.heat_level);
+
+
+// pwm output level 
+//    PC                                        MCU-value                   ENCODER read
+//Artisan-> heat_from_Artisan        >>    To_artisan.heat_level     <<     heat_from_enc
+//  heat_from_Artisan == heat_from_enc  in loop（） 
+
 
 
     heat_from_enc = encoder.getCount() ;  // 获取编码器数据
@@ -551,6 +559,7 @@ if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//给温度数组的
             heat_from_Artisan= To_artisan.heat_level ; 
             encoder.clearCount();
             heat_from_enc=0;
+            
 
        } else if ((To_artisan.heat_level + heat_from_enc) >= 100 && To_artisan.heat_level <= 100){//如果输入大于100值，自动限制在100
              
