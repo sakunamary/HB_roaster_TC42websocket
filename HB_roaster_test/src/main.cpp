@@ -548,7 +548,7 @@ void loop() {
 //  heat_from_Artisan == heat_from_enc  in loop（） 
 
 
-    heat_from_enc = encoder.getCount();123
+    heat_from_enc = encoder.getCount();
 
 
  //Serial.printf("heat_from_enc: %d\n", heat_from_enc);

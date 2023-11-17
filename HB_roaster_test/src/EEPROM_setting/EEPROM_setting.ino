@@ -25,14 +25,6 @@ extern user_wifi_t  user_wifi ;
 
 
 
-user_wifi_t user_wifi = {
-                        " ", //char ssid[60]; //增加到30个字符
-                        " ", //char password[60]; //增加到30个字符
-                        PWM_FREQ,//int PWM_FREQ_HEAT;
-                        false //bool   Init_mode ; //是否初始化模式
-                        };
-
-
 void setup()
 {
   Serial.begin(BAUDRATE);
