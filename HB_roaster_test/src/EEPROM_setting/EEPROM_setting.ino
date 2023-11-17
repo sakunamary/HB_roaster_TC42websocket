@@ -7,7 +7,7 @@
 */
 
 #include "EEPROM.h"
-
+#define BAUDRATE 115200
 //pwm setting 
 #define PWM_FREQ 10000
 #define PWM_RESOLUTION 12 //0-4096
