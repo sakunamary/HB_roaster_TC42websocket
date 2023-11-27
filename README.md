@@ -9,17 +9,17 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
 #### 基础知识点
 我学习了一下HB M2S/M6S的设计，设计相当的有特点，我始终搞不明白为什这么设计的：
 1. 数据传输的特点是：
-1）主板实际上采集了4路温度数据，M2S只有三路（这个OK，三路是够用的啦）
-2）Artisan采用了TC4协议的数据格式。如：“27，0.0，0.0，C” 这样的。
-3）通过CHAN；1300 和CHAN；2400 这个命令来切换获取数据格式。温度抽取就是不停的轮询数据。通讯方式如下：
-PC：CHAN；1300
-HB：OK
-PC：READ
-HB：27，0.0(ET)，0.0(BT),C
-PC:CHAN;2400
-HB:OK
-PC:READ
-HB:27,0.0(INLET),0.0(EXhust?),C //我手上没有M6 ，不确定是不是exhust
+   1. 主板实际上采集了4路温度数据，M2S只有三路（这个OK，三路是够用的啦）
+   2. Artisan采用了TC4协议的数据格式。如：“27，0.0，0.0，C” 这样的。
+   3. 通过CHAN；1300 和CHAN；2400 这个命令来切换获取数据格式。温度抽取就是不停的轮询数据。通讯方式如下：
+>PC：CHAN；1300
+>HB：OK
+>PC：READ
+>HB：27，0.0(ET)，0.0(BT),C
+>PC:CHAN;2400
+>HB:OK
+>PC:READ
+>HB:27,0.0(INLET),0.0(EXhust?),C //我手上没有M6 ，不确定是不是exhust
 
 
 #### 基本功能
