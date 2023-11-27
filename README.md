@@ -13,13 +13,21 @@ HB M2S/M6S roaster TC4 data to websocket with WIFI
    2. Artisan采用了TC4协议的数据格式。如：“27，0.0，0.0，C” 这样的。
    3. 通过CHAN；1300 和CHAN；2400 这个命令来切换获取数据格式。温度抽取就是不停的轮询数据。通讯方式如下：
 > PC：CHAN；1300
+> 
 > HB：OK
+> 
 > PC：READ
+> 
 > HB：27，0.0(ET)，0.0(BT),C
+> 
 > PC:CHAN;2400
+> 
 > HB:OK
+> 
 > PC:READ
+> 
 > HB:27,0.0(INLET),0.0(EXhust?),C //我手上没有M6 ，不确定是不是exhust
+> 
 
 
 #### 基本功能
