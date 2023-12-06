@@ -16,8 +16,8 @@
 #define RXD 17
 
 //pinout setting
-#define ENC_CLK  32
-#define ENC_DT   33
+#define ENC_CLK  33
+#define ENC_DT   32
 #define PWM_HEAT 26
 
 
