@@ -8,7 +8,7 @@
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 #define BAUDRATE 115200  //serial port baudrate
 
-#define VERSION "1.0.0"
+#define VERSION "1.0.3"
 
 
 #define DEBUG_MODE
@@ -69,7 +69,7 @@ typedef struct  data_to_artisan {
 const char wifi_sussce_html[] PROGMEM = R"rawliteral(
 <!doctype html><html lang='cn'><head>
     <meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
-        <title>HB-WIFI 设置</title>
+        <title>HB-WIFI 模块设置</title>
           <style>*,::after,::before{box-sizing:border-box;}
     body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';
     font-size:1rem;
@@ -167,13 +167,8 @@ const char index_html[] PROGMEM = R"rawliteral(
             </p>
             <br/>
             <div align="center">
-                <button  type='submit'>保存</button>
+                <button  type='submit' onclick ='submitMessage()'>保存</button>
             </div>
-        
-            <div align="center">
-                <button type='submit'onclick="submitMessage()">保存</button>
-            </div>
-            <br/>
             <br/>
         </form> 
             <p>

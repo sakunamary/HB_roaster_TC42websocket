@@ -538,9 +538,9 @@ void loop() {
     mb.task();
 
 
-    //mb.Hreg(BT_HREG,To_artisan.BT *100);
-    //mb.Hreg(ET_HREG,To_artisan.ET *100);
-    //mb.Hreg(INLET_HREG,To_artisan.inlet *100);
+    mb.Hreg(BT_HREG,To_artisan.BT *10);
+    mb.Hreg(ET_HREG,To_artisan.ET *10);
+    mb.Hreg(INLET_HREG,To_artisan.inlet *10);
 
 // pwm output level 
 //    PC                                        MCU-value                   ENCODER read
