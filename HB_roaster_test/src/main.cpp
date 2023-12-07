@@ -589,7 +589,7 @@ if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {
            }
        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
 }
-       pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,0,4096), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
+       pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,0,1024), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
  
   //Serial.printf("heat_from_Artisan: %d\n", heat_from_Artisan);
  // Serial.printf("To_artisan.heat_level: %d\n", To_artisan.heat_level);
