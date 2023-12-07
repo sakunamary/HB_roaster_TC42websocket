@@ -16,8 +16,8 @@
 #define RXD 17
 
 //pinout setting
-#define ENC_CLK  32
-#define ENC_DT   33
+#define ENC_CLK  33
+#define ENC_DT   32
 #define PWM_HEAT 26
 
 
@@ -25,7 +25,7 @@
 
 //pwm setting 
 #define PWM_FREQ 10000
-#define PWM_RESOLUTION 12 //0-4096
+#define PWM_RESOLUTION 10 //0-4096
 
 // 网页设置的参数
  typedef struct eeprom_settings 
