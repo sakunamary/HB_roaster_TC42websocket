@@ -40,7 +40,7 @@ String MsgString;
 String MSG_token1300[4];
 String MSG_token2400[4];
 
-
+long timestamp;
 
 int16_t  heat_from_Hreg = 0;
 int16_t  heat_from_enc  = 0;
@@ -527,7 +527,7 @@ Serial.printf("\nStart Task...\n");
     mb.Hreg(INLET_HREG,0); //初始化赋值
     mb.Hreg(HEAT_HREG,0);  //初始化赋值
 
-
+timestamp=millis();
 }
 
 void loop() {
@@ -536,11 +536,12 @@ void loop() {
 //更新寄存器数据
 
     mb.task();
-
-
-    mb.Hreg(BT_HREG,To_artisan.BT *10);
-    mb.Hreg(ET_HREG,To_artisan.ET *10);
-    mb.Hreg(INLET_HREG,To_artisan.inlet *10);
+ if (millis() > timestamp + 200) {
+       timestamp = millis();
+    mb.Hreg(BT_HREG,To_artisan.BT *100);
+    mb.Hreg(ET_HREG,To_artisan.ET *100);
+    mb.Hreg(INLET_HREG,To_artisan.inlet *100);
+   }
 
 // pwm output level 
 //    PC                                        MCU-value                   ENCODER read

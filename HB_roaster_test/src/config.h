@@ -25,7 +25,7 @@
 
 //pwm setting 
 #define PWM_FREQ 10000
-#define PWM_RESOLUTION 12 //0-4096
+#define PWM_RESOLUTION 10 //0-1024
 
 // 网页设置的参数
  typedef struct eeprom_settings 
