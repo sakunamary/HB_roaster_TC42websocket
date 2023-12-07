@@ -535,12 +535,12 @@ void loop() {
  const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
 //更新寄存器数据
 
-    mb.task();
+ mb.task();
  if (millis() > timestamp + 200) {
        timestamp = millis();
-    mb.Hreg(BT_HREG,To_artisan.BT *100);
-    mb.Hreg(ET_HREG,To_artisan.ET *100);
-    mb.Hreg(INLET_HREG,To_artisan.inlet *100);
+    mb.Hreg(BT_HREG,int(To_artisan.BT *100));
+    mb.Hreg(ET_HREG,int(To_artisan.ET *100));
+    mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
    }
 
 // pwm output level 
