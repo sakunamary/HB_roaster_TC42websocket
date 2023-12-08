@@ -16,24 +16,22 @@
 //#define RXD 17
 
 //pinout setting
-#define ENC_CLK  33
-#define ENC_DT   32
-#define PWM_HEAT 26
+#define ENC_CLK  12
+#define ENC_DT   13
+#define PWM_HEAT 16
 
 
 
 
 //pwm setting 
 #define PWM_FREQ 10000
-#define PWM_RESOLUTION 10 //0-1024
+#define PWM_RESOLUTION 1024 //0-1024
 
 // 网页设置的参数
  typedef struct eeprom_settings 
 {
   char ssid[60]; //增加到30个字符
   char password[60]; //增加到30个字符
-  int PWM_FREQ_HEAT;
-  bool   Init_mode ; //是否初始化模式
 } user_wifi_t;
 
 extern user_wifi_t  user_wifi ;
