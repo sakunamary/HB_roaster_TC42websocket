@@ -8,7 +8,7 @@
 
 
 
-#define VERSION "1.0.4"
+#define VERSION "1.0.5"
 
 // 网页设置的参数
  typedef struct eeprom_settings 
