@@ -32,6 +32,7 @@
 {
   char ssid[60]; //增加到30个字符
   char password[60]; //增加到30个字符
+  int PWM_FREQ_HEAT;
   bool   Init_mode ; //是否初始化模式
 } user_wifi_t;
 
