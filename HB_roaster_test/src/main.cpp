@@ -15,11 +15,20 @@
 
 //Ticker to execute actions at defined intervals
 #include "TickTwo.h" //ESP8266 compatible version of Ticker by sstaub
-#include "DFRobot_AHT20.h"
+
+
+#include <pwmWrite.h>
+#include <ESP32Encoder.h>
+#include "esp_task_wdt.h"
+
+#include <ModbusIP_ESP8266.h>
+
+
+
+
 
 ESP8266WebServer    server(80); //构建webserver类
 WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
-DFRobot_AHT20 aht20;//构建aht20 类
 
 
 char ap_name[30] ;
@@ -36,7 +45,7 @@ String MSG_token2400[4];
 
 
 user_wifi_t user_wifi = {" ", " ", false};
-data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0.0,0.0};
+data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0};
 
 
 //functions declear for PlatfromIO rules
@@ -45,7 +54,7 @@ void handlePortal();//处理设置网页处理模块
 //void task_get_data_1300();//获取锅炉串口信息。
 //void task_get_data_2400();
 void task_get_data();
-void get_env_samples();//获取环境变量函数 ，每两分钟查询一次数值再写入 To_artisan （已完成）
+
 
 String IpAddressToString(const IPAddress &ipAddress)
 {
@@ -174,17 +183,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
 }
 
 
-void get_env_samples(){//获取环境变量函数
-
- if(aht20.startMeasurementReady(/* crcEn = */true)){
-  To_artisan.temp_env = aht20.getTemperature_C();
-  To_artisan.humi_env =aht20.getHumidity_RH();
-  }
-    
-
-}// end of 获取环境变量函数
-
-
 void task_get_data(){
 
     int i=0;
@@ -259,7 +257,6 @@ void task_get_data(){
 
 
 TickTwo ticker_task_1s(task_get_data, 1000, 0, MILLIS); 
-TickTwo ticker_3mins(get_env_samples, 180*1000, 0, MILLIS); 
 
 
 void handlePortal() {
@@ -286,9 +283,6 @@ void setup() {
 
 //init env_data 初始化环境参数
 //uint8_t AHT_status;
-
-aht20.begin();//初始化 AHT20
-get_env_samples();// init enveriment data getting.首次环境获取数据
 
 Serial.begin(BAUDRATE);
 
@@ -349,6 +343,5 @@ void loop() {
     webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
     ticker_task_1s.update();
-    ticker_3mins.update();
 
 }
