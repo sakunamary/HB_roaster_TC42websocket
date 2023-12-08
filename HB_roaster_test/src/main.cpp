@@ -17,10 +17,6 @@
 #include "TickTwo.h" //ESP8266 compatible version of Ticker by sstaub
 
 
-#include <pwmWrite.h>
-#include <ESP32Encoder.h>
-#include "esp_task_wdt.h"
-
 #include <ModbusIP_ESP8266.h>
 
 
@@ -46,6 +42,23 @@ String MSG_token2400[4];
 
 user_wifi_t user_wifi = {" ", " ", false};
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0};
+
+const uint32_t frequency = PWM_FREQ;
+const byte resolution = PWM_RESOLUTION; //pwm -0-4096
+
+
+//Modbus Registers Offsets
+const int BT_HREG = 3001;
+const int ET_HREG = 3002;
+const int INLET_HREG = 3003;
+const int HEAT_HREG = 3004;
+
+//Coil Pins
+const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
+
+
+//ModbusIP object
+ModbusIP mb;
 
 
 //functions declear for PlatfromIO rules
@@ -284,6 +297,8 @@ void setup() {
 //init env_data 初始化环境参数
 //uint8_t AHT_status;
 
+pinMode(HEAT_OUT_PIN, OUTPUT); 
+
 Serial.begin(BAUDRATE);
 
 
@@ -336,6 +351,25 @@ if (user_wifi.Init_mode)
 
  ticker_task_1s.start();
   ticker_3mins.start();
+//Init Modbus-TCP 
+
+    Serial.printf("\nStart Modbus-TCP   service...\n");
+
+    mb.server(502);		//Start Modbus IP //default port :502
+    //mb.client();
+    // Add SENSOR_IREG register - Use addIreg() for analog Inputs
+    mb.addHreg(BT_HREG);
+    mb.addHreg(ET_HREG);
+    mb.addHreg(INLET_HREG);
+    mb.addHreg(HEAT_HREG);
+
+    mb.Hreg(BT_HREG,0); //初始化赋值
+    mb.Hreg(ET_HREG,0);  //初始化赋值
+    mb.Hreg(INLET_HREG,0); //初始化赋值
+    mb.Hreg(HEAT_HREG,0);  //初始化赋值
+
+timestamp=millis();
+
 
 }
 
@@ -343,5 +377,13 @@ void loop() {
     webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
     ticker_task_1s.update();
+    
+ mb.task();
+ if (millis() > timestamp + 200) {
+       timestamp = millis();
+    mb.Hreg(BT_HREG,int(To_artisan.BT *100));
+    mb.Hreg(ET_HREG,int(To_artisan.ET *100));
+    mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
+   }
 
 }
