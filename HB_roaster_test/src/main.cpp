@@ -377,8 +377,9 @@ void loop() {
     ticker_task_200ms_send_modbus.update();//task_send_modbus 
 
 
- heat_from_enc = encoder.readAndReset(); //读取新的encoder变化量
+ heat_from_enc = encoder.readAndReset()/4; //读取新的encoder变化量
 
+//Serial.println(heat_from_enc);
     To_artisan.heat_level =  mb.Hreg(HEAT_HREG);//从寄存器读取火力数据
 
        //HEAT 控制部分 
