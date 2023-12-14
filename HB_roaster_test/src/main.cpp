@@ -420,5 +420,5 @@ void loop() {
  // Serial.printf("To_artisan.heat_level: %d\n", To_artisan.heat_level);
 
 
-delay(50);
+//delay(50);
 }
