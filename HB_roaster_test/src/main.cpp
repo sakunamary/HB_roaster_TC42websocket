@@ -42,10 +42,10 @@ data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0};
 
 
 //Modbus Registers Offsets
-const int BT_HREG = 3001;
-const int ET_HREG = 3002;
-const int INLET_HREG = 3003;
-const int HEAT_HREG = 3004;
+const uint16_t BT_HREG = 3001;
+const uint16_t ET_HREG = 3002;
+const uint16_t INLET_HREG = 3003;
+const uint16_t HEAT_HREG = 3004;
 
 int16_t  heat_from_Hreg = 0;
 int16_t  heat_from_enc  = 0;
