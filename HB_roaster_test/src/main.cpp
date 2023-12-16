@@ -18,6 +18,8 @@
 #include "TickTwo.h" //ESP8266 compatible version of Ticker by sstaub
 
 #include <ModbusIP_ESP8266.h>
+
+#define ENCODER_DO_NOT_USE_INTERRUPTS
 #include <Encoder.h>
 
 
@@ -270,12 +272,12 @@ void task_get_data(){
 void Task_send_modbus(){
     mb.Hreg(BT_HREG,int(To_artisan.BT *100));
     mb.Hreg(ET_HREG,int(To_artisan.ET *100));
-    mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
+    mb.Hreg(INLET_HREG,int(To_artisan.AP *100));
 }
 
 
 
-TickTwo ticker_task_1s_get_date(task_get_data, 1000, 0, MILLIS); 
+TickTwo ticker_task_2s_get_date(task_get_data, 2000, 0, MILLIS); 
 TickTwo ticker_task_200ms_send_modbus(Task_send_modbus, 200, 0, MILLIS); 
 
 
@@ -348,7 +350,7 @@ analogWriteFreq(PWM_FREQ);
   //webSocket.onEvent(webSocketEvent);
 
 
- ticker_task_1s_get_date.start();
+ ticker_task_2s_get_date.start();
  ticker_task_200ms_send_modbus.start();
 //Init Modbus-TCP 
 
@@ -372,15 +374,16 @@ analogWriteFreq(PWM_FREQ);
 void loop() {
     //webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
-     mb.task();//处理modbus数据
-    ticker_task_1s_get_date.update();//task_get_data 获取数据
+    ticker_task_2s_get_date.update();//task_get_data 获取数据
     ticker_task_200ms_send_modbus.update();//task_send_modbus 
 
 
- heat_from_enc = encoder.readAndReset()/4; //读取新的encoder变化量
+ heat_from_enc = encoder.readAndReset(); //读取新的encoder变化量
 
-//Serial.println(heat_from_enc);
-    To_artisan.heat_level =  mb.Hreg(HEAT_HREG);//从寄存器读取火力数据
+   
+ To_artisan.heat_level =  mb.Hreg(HEAT_HREG);//从寄存器读取火力数据
+ delay(50);
+
 
        //HEAT 控制部分 
        if ((To_artisan.heat_level + heat_from_enc) <= 0 && To_artisan.heat_level >=0 ) { //如果输入小于0值，自动限制在0
@@ -412,7 +415,7 @@ void loop() {
             heat_from_enc=0;
 
            }
-    analogWrite(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,0,1024)); //将火力数据输出到PWM
+    analogWrite(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000)); //将火力数据输出到PWM
 
       // (HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,0,1024), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
  
@@ -420,5 +423,5 @@ void loop() {
  // Serial.printf("To_artisan.heat_level: %d\n", To_artisan.heat_level);
 
 
-//delay(50);
+     mb.task();//处理modbus数据
 }
