@@ -10,7 +10,7 @@
 
 #include "ArduinoJson.h"
 //Websockets Lib by links2004
-//#include <WebSocketsServer.h>
+#include <WebSocketsServer.h>
 //JSON for Artisan Websocket implementation
 #include "ArduinoJson.h"
 
@@ -43,13 +43,13 @@ user_wifi_t user_wifi = {" ", " "};
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0};
 
 int16_t  heat_from_enc  = 0;
-int16_t heat_from_Artisan;
+int16_t heat_from_Artisan =0;
 //Coil Pins
 const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
 
 
 //ModbusIP object
-ModbusIP mb;
+//ModbusIP mb;
 
 
 //ENCODER object 
