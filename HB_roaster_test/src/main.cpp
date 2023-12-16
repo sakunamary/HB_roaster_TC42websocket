@@ -156,12 +156,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
                 data["ET"] = To_artisan.ET;
             }
 
-            else if (command == "getEnv")
+            else if (command == "getHEAT")
             {
                 root["id"] = ln_id;
-                data["TEMP"] = To_artisan.temp_env;
-                data["HUMI"] = To_artisan.humi_env;
-                    
+                data["HEAT"] = To_artisan.heat_level;
             }
 
             else if (command == "getData")
@@ -170,7 +168,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
                 data["BT"] = To_artisan.BT;
                 data["ET"] = To_artisan.ET;
                 data["AP"] = To_artisan.AP ;
-                data["inlet"] = To_artisan.inlet;                         
+                data["HEAT"] = To_artisan.heat_level;                         
             }
 
 
@@ -356,7 +354,7 @@ analogWriteFreq(PWM_FREQ);
  //ticker_task_200ms_send_modbus.start();
 //Init Modbus-TCP 
 
-    Serial.printf("\nStart Modbus-TCP   service...\n");
+    //Serial.printf("\nStart Modbus-TCP   service...\n");
 
     // mb.server(502);		//Start Modbus IP //default port :502
 
