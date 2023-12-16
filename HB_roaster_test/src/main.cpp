@@ -131,6 +131,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
             
             long ln_id = doc["id"].as<long>();
     
+            if(!doc["HeatVal"].isNull()) //发送Heat level
+            {
+                heat_from_Artisan = doc["HeatVal"].as<long>();
+
+                if (heat_from_Artisan >=0 && heat_from_Artisan <= 100)
+                    {//给温度数组的最后一个数值写入数据   ){// 过滤TargetC -1 和 大于100 值。
+                    To_artisan.heat_level=heat_from_Artisan;}  
+            }
+    
             // Send Values to Artisan over Websocket
             JsonObject root = doc.to<JsonObject>();
             JsonObject data = root.createNestedObject("data");
