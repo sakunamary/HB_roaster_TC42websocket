@@ -64,11 +64,11 @@ const byte resolution = PWM_RESOLUTION; //pwm -0-4096
 
 
 //Modbus Registers Offsets
-const int BT_HREG = 3001;
-const int ET_HREG = 3002;
-const int AP_HREG = 3003;
-const int INLET_HREG = 3005;
-const int HEAT_HREG = 3004;
+const uint16_t BT_HREG = 3001;
+const uint16_t ET_HREG = 3002;
+const uint16_t AP_HREG = 3003;
+const uint16_t INLET_HREG = 3005;
+const uint16_t HEAT_HREG = 3004;
 
 //Coil Pins
 const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
