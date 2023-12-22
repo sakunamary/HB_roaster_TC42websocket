@@ -40,7 +40,6 @@ String MsgString;
 String MSG_token1300[4];
 String MSG_token2400[4];
 
-long timestamp;
 
 int16_t  heat_from_Hreg = 0;
 int16_t  heat_from_enc  = 0;
@@ -65,11 +64,11 @@ const byte resolution = PWM_RESOLUTION; //pwm -0-4096
 
 
 //Modbus Registers Offsets
-const int16_t BT_HREG = 3001;
-const int16_t ET_HREG = 3002;
-const int16_t AP_HREG = 3003;
-const int16_t INLET_HREG = 3005;
-const int16_t HEAT_HREG = 3004;
+const int BT_HREG = 3001;
+const int ET_HREG = 3002;
+const int AP_HREG = 3003;
+const int INLET_HREG = 3005;
+const int HEAT_HREG = 3004;
 
 //Coil Pins
 const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
@@ -255,7 +254,7 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 2000/ portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -314,8 +313,8 @@ void task_get_data(void *pvParameters)
                 }
             if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
                 {//lock the  mutex       
-                    To_artisan.inlet = MSG_token2400[1].toFloat() ;
-                    
+                        To_artisan.AP = MSG_token2400[1].toDouble();
+                        To_artisan.inlet = MSG_token2400[2].toDouble();
                         xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                 }   
                 
@@ -438,7 +437,7 @@ Serial.printf("\nStart Task...\n");
         ,
         4096 // This stack size can be checked & adjusted by reading the Stack Highwater
         ,
-        NULL, 1 // Priority, with 1 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+        NULL, 2 // Priority, with 1 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
         ,
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
@@ -447,22 +446,16 @@ Serial.printf("\nStart Task...\n");
 
 
  xTaskCreatePinnedToCore(
-        task_get_data, "get_data" // 获取HB数据
+        task_send_Hreg, "send_Hreg" // 获取HB数据
         ,
-        4096 // This stack size can be checked & adjusted by reading the Stack Highwater
+        2048 // This stack size can be checked & adjusted by reading the Stack Highwater
         ,
         NULL, 1 // Priority, with 1 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
         ,
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
 
-    Serial.printf("\nTASK1:get_data...\n");
-
-
-
-
-
-
+    Serial.printf("\nTASK2:get_dsend_Hregata...\n");
 
 
     // init websocket
@@ -547,7 +540,7 @@ Serial.printf("\nStart Task...\n");
     pwm.write(HEAT_OUT_PIN, 0, user_wifi.PWM_FREQ_HEAT, resolution);
   
     pwm.resume();
-   // pwm.printDebug();
+    pwm.printDebug();
 
     Serial.println("PWM started");  
    
@@ -574,14 +567,16 @@ Serial.printf("\nStart Task...\n");
     mb.addHreg(BT_HREG);
     mb.addHreg(ET_HREG);
     mb.addHreg(INLET_HREG);
+    mb.addHreg(AP_HREG);
     mb.addHreg(HEAT_HREG);
 
     mb.Hreg(BT_HREG,0); //初始化赋值
     mb.Hreg(ET_HREG,0);  //初始化赋值
     mb.Hreg(INLET_HREG,0); //初始化赋值
     mb.Hreg(HEAT_HREG,0);  //初始化赋值
+    mb.Hreg(AP_HREG,0);//初始化赋值
 
-timestamp=millis();
+
 }
 
 void loop() {
