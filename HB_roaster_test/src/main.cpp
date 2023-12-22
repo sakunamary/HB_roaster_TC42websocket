@@ -25,7 +25,7 @@
 
 
 HardwareSerial Serial_in(2);
-SemaphoreHandle_t xThermoDataMutex = NULL;
+SemaphoreHandle_t xGetDataMutex = NULL;
 
 AsyncWebServer server(80);
 
@@ -65,10 +65,11 @@ const byte resolution = PWM_RESOLUTION; //pwm -0-4096
 
 
 //Modbus Registers Offsets
-const int BT_HREG = 3001;
-const int ET_HREG = 3002;
-const int INLET_HREG = 3003;
-const int HEAT_HREG = 3004;
+const int16_t BT_HREG = 3001;
+const int16_t ET_HREG = 3002;
+const int16_t AP_HREG = 3003;
+const int16_t INLET_HREG = 3005;
+const int16_t HEAT_HREG = 3004;
 
 //Coil Pins
 const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
@@ -80,6 +81,8 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
 void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){}
 String IpAddressToString(const IPAddress &ipAddress);      
 static IRAM_ATTR void enc_cb(void* arg);
+void task_send_Hreg(void *pvParameters);
+void task_get_data(void *pvParameters);
 
 
 
@@ -253,19 +256,18 @@ void task_get_data(void *pvParameters)
     TickType_t xLastWakeTime;
 
     const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
-
-
-   //const TickType_t xIntervel = (2 * 1000) / portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
     int i = 0;
     for (;;) // A Task shall never return or exit.
     { //for loop
-        // Wait for the next cycle (intervel 750ms).
+        // Wait for the next cycle (intervel 1s).
+         vTaskDelayUntil(&xLastWakeTime, xIntervel);
 
-         StringTokenizer tokens(MsgString, ",");
         //获取数据
+            StringTokenizer tokens(MsgString, ",");
+
             Serial_in.print("CHAN;1300\n");
             delay(20);
             Serial_in.flush();
@@ -318,15 +320,42 @@ void task_get_data(void *pvParameters)
                 
             MsgString = "";
             i=0;   
-                vTaskDelayUntil(&xLastWakeTime, xIntervel);
+
 
     }
 }//function 
 
 
+
+void task_send_Hreg(void *pvParameters)
+{ //function 
+
+    /* Variable Definition */
+    (void)pvParameters;
+    TickType_t xLastWakeTime;
+
+    const TickType_t xIntervel = 250/ portTICK_PERIOD_MS;
+
+    /* Task Setup and Initialize */
+    // Initial the xLastWakeTime variable with the current time.
+    xLastWakeTime = xTaskGetTickCount();
+    for (;;) // A Task shall never return or exit.
+       
+    { //for loop
+    // Wait for the next cycle (intervel 1s).
+    vTaskDelayUntil(&xLastWakeTime, xIntervel);
+    mb.Hreg(BT_HREG,int(To_artisan.BT *100));
+    mb.Hreg(ET_HREG,int(To_artisan.ET *100));
+    mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
+
+    }
+
+}
+
+
 void setup() {
 
-    xThermoDataMutex = xSemaphoreCreateMutex();
+    xGetDataMutex = xSemaphoreCreateMutex();
     loopTaskWDTEnabled = true;
 
     pinMode(HEAT_OUT_PIN, OUTPUT); 
@@ -407,8 +436,26 @@ Serial.printf("\nStart Task...\n");
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
 
+    Serial.printf("\nTASK1:get_data...\n");
+
+
+ xTaskCreatePinnedToCore(
+        task_get_data, "get_data" // 获取HB数据
+        ,
+        4096 // This stack size can be checked & adjusted by reading the Stack Highwater
+        ,
+        NULL, 1 // Priority, with 1 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+        ,
+        NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
+    );
 
     Serial.printf("\nTASK1:get_data...\n");
+
+
+
+
+
+
 
 
     // init websocket
@@ -493,7 +540,7 @@ Serial.printf("\nStart Task...\n");
     pwm.write(HEAT_OUT_PIN, 0, user_wifi.PWM_FREQ_HEAT, resolution);
   
     pwm.resume();
-    pwm.printDebug();
+   // pwm.printDebug();
 
     Serial.println("PWM started");  
    
@@ -534,14 +581,8 @@ void loop() {
 
  const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
 //更新寄存器数据
-
  mb.task();
- if (millis() > timestamp + 200) {
-       timestamp = millis();
-    mb.Hreg(BT_HREG,int(To_artisan.BT *100));
-    mb.Hreg(ET_HREG,int(To_artisan.ET *100));
-    mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
-   }
+
 
 // pwm output level 
 //    PC                                        MCU-value                   ENCODER read
@@ -589,7 +630,7 @@ if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {
            }
        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
 }
-       pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,0,1024), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
+       pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
  
   //Serial.printf("heat_from_Artisan: %d\n", heat_from_Artisan);
  // Serial.printf("To_artisan.heat_level: %d\n", To_artisan.heat_level);
