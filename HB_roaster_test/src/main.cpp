@@ -174,10 +174,10 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                       heat_from_Artisan = doc["HeatVal"].as<long>();
 
                         if (heat_from_Artisan >0 && heat_from_Artisan < 100
-                           &&  (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) )
+                           &&  (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) )
                            {//给温度数组的最后一个数值写入数据   ){// 过滤TargetC -1 和 大于100 值。
                             To_artisan.heat_level=heat_from_Artisan;
-                            xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+                            xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                         }    
             }  
 
@@ -187,7 +187,7 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                     JsonObject root = doc.to<JsonObject>();
                     JsonObject data = root.createNestedObject("data");
 
-                if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {//给温度数组的最后一个数值写入数据   
+                if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {//给温度数组的最后一个数值写入数据   
 
                     if (command == "getBT")
                     {
@@ -224,7 +224,7 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
                         //data["HEAT"] = To_artisan.heat_level;                   
                     }
 
-                    xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+                    xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                 } 
 
 
@@ -283,13 +283,13 @@ void task_get_data(void *pvParameters)
                   // Serial.println(MSG_token[i]);
                    i++;
                 }
-            if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
+            if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
 
                 {//lock the  mutex    
                     To_artisan.BT = MSG_token1300[1].toFloat();
                     To_artisan.ET = MSG_token1300[2].toFloat();
 
-                        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+                        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                 }   
                 
             MsgString = "";
@@ -312,10 +312,11 @@ void task_get_data(void *pvParameters)
                   // Serial.println(MSG_token[i]);
                    i++;
                 }
-            if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
+            if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
                 {//lock the  mutex       
                     To_artisan.inlet = MSG_token2400[1].toFloat() ;
-                        xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+                    
+                        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                 }   
                 
             MsgString = "";
@@ -344,9 +345,15 @@ void task_send_Hreg(void *pvParameters)
     { //for loop
     // Wait for the next cycle (intervel 1s).
     vTaskDelayUntil(&xLastWakeTime, xIntervel);
-    mb.Hreg(BT_HREG,int(To_artisan.BT *100));
-    mb.Hreg(ET_HREG,int(To_artisan.ET *100));
-    mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
+     if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) 
+     {
+        mb.Hreg(BT_HREG,int(To_artisan.BT *100));
+        mb.Hreg(ET_HREG,int(To_artisan.ET *100));
+        mb.Hreg(AP_HREG,int(To_artisan.AP *100));
+        mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
+        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
+     } //给温度数组的最后一个数值写入数据
+
 
     }
 
@@ -595,7 +602,7 @@ void loop() {
 
  //Serial.printf("heat_from_enc: %d\n", heat_from_enc);
 
-if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {  
+if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {  
         To_artisan.heat_level =  mb.Hreg(HEAT_HREG);//读取数据
 
        //HEAT 控制部分 
@@ -628,7 +635,7 @@ if (xSemaphoreTake(xThermoDataMutex, xIntervel) == pdPASS) {
             heat_from_enc=0;
 
            }
-       xSemaphoreGive(xThermoDataMutex);  //end of lock mutex
+       xSemaphoreGive(xGetDataMutex);  //end of lock mutex
 }
        pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
  
