@@ -288,7 +288,7 @@ void task_get_data(void *pvParameters)
                     To_artisan.BT = MSG_token1300[1].toFloat();
                     To_artisan.ET = MSG_token1300[2].toFloat();
 
-                        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
+                xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                 }   
                 
             MsgString = "";
@@ -320,8 +320,6 @@ void task_get_data(void *pvParameters)
                 
             MsgString = "";
             i=0;   
-
-
     }
 }//function 
 
@@ -562,7 +560,6 @@ Serial.printf("\nStart Task...\n");
     Serial.printf("\nStart Modbus-TCP   service...\n");
 
     mb.server(502);		//Start Modbus IP //default port :502
-    //mb.client();
     // Add SENSOR_IREG register - Use addIreg() for analog Inputs
     mb.addHreg(BT_HREG);
     mb.addHreg(ET_HREG);
@@ -575,8 +572,6 @@ Serial.printf("\nStart Task...\n");
     mb.Hreg(INLET_HREG,0); //初始化赋值
     mb.Hreg(HEAT_HREG,0);  //初始化赋值
     mb.Hreg(AP_HREG,0);//初始化赋值
-
-
 }
 
 void loop() {
@@ -592,8 +587,7 @@ void loop() {
 //  heat_from_Artisan == heat_from_enc  in loop（） 
 
 
-    heat_from_enc = encoder.getCount();
-
+heat_from_enc = encoder.getCount();
 
  //Serial.printf("heat_from_enc: %d\n", heat_from_enc);
 
@@ -634,9 +628,6 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
 }
        pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
  
-  //Serial.printf("heat_from_Artisan: %d\n", heat_from_Artisan);
- // Serial.printf("To_artisan.heat_level: %d\n", To_artisan.heat_level);
-
 
 delay(50);
 
