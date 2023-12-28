@@ -24,7 +24,8 @@
 
 
 
-HardwareSerial Serial_in(2);
+HardwareSerial Serial_in(0);
+//HardwareSerial Serial_in(2);
 SemaphoreHandle_t xGetDataMutex = NULL;
 
 AsyncWebServer server(80);
@@ -366,8 +367,8 @@ void setup() {
 
     Serial_in.begin(BAUDRATE, SERIAL_8N1, RXD, TXD);
 #if defined(DEBUG_MODE)
-    Serial.begin(BAUDRATE);
-    Serial.printf("\nHB_WIFI  STARTING...\n");
+    //Serial.begin(BAUDRATE);
+    Serial_in.printf("\nHB_WIFI  STARTING...\n");
 #endif
 
   //初始化网络服务
@@ -393,7 +394,7 @@ void setup() {
         // show AP's IP
     }
 #if defined(DEBUG_MODE)
-    Serial.printf("\nRead data from EEPROM...\n");
+    Serial_in.printf("\nRead data from EEPROM...\n");
 #endif
     // set up eeprom data
     EEPROM.begin(sizeof(user_wifi));
@@ -411,22 +412,22 @@ void setup() {
 //     EEPROM.commit();
 // }
 #if defined(DEBUG_MODE)
-   Serial.print("HB_WIFI's IP:");
+   Serial_in.print("HB_WIFI's IP:");
 #endif
 
 
     if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
     {
-        Serial.println(IpAddressToString(WiFi.softAPIP()));
+        Serial_in.println(IpAddressToString(WiFi.softAPIP()));
         local_IP = IpAddressToString(WiFi.softAPIP());
     }
     else
     {
-        Serial.println(IpAddressToString(WiFi.localIP()));
+        Serial_in.println(IpAddressToString(WiFi.localIP()));
         local_IP = IpAddressToString(WiFi.localIP());
     }
 #if defined(DEBUG_MODE)
-Serial.printf("\nStart Task...\n");
+Serial_in.printf("\nStart Task...\n");
 #endif
     /*---------- Task Definition ---------------------*/
     // Setup tasks to run independently.
@@ -440,7 +441,7 @@ Serial.printf("\nStart Task...\n");
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
 
-    Serial.printf("\nTASK1:get_data...\n");
+    Serial_in.printf("\nTASK1:get_data...\n");
 
 
  xTaskCreatePinnedToCore(
@@ -453,7 +454,7 @@ Serial.printf("\nStart Task...\n");
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
 
-    Serial.printf("\nTASK2:get_dsend_Hregata...\n");
+    Serial_in.printf("\nTASK2:get_dsend_Hregata...\n");
 
 
     // init websocket
@@ -531,7 +532,7 @@ Serial.printf("\nStart Task...\n");
     server.onFileUpload(onUpload);
 
   server.begin();
-  Serial.println("HTTP server started");
+  Serial_in.println("HTTP server started");
 
   //Init pwm output
     pwm.pause();
@@ -540,9 +541,9 @@ Serial.printf("\nStart Task...\n");
     pwm.resume();
     pwm.printDebug();
 
-    Serial.println("PWM started");  
+    Serial_in.println("PWM started");  
    
-    Serial.printf("\nStart INPUT ENCODER  service...\n");
+    Serial_in.printf("\nStart INPUT ENCODER  service...\n");
 
 //init ENCODER
 	// Enable the weak pull up resistors
@@ -557,7 +558,7 @@ Serial.printf("\nStart Task...\n");
    // Serial.printf("Encoder now count: %d\n", encoder.getCount()); 
 //Init Modbus-TCP 
 
-    Serial.printf("\nStart Modbus-TCP   service...\n");
+    Serial_in.printf("\nStart Modbus-TCP   service...\n");
 
     mb.server(502);		//Start Modbus IP //default port :502
     // Add SENSOR_IREG register - Use addIreg() for analog Inputs
