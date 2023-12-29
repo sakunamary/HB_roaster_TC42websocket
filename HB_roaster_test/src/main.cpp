@@ -333,7 +333,7 @@ void task_send_Hreg(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 250/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
 
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
@@ -351,10 +351,10 @@ void task_send_Hreg(void *pvParameters)
         mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
         xSemaphoreGive(xGetDataMutex);  //end of lock mutex
      } //给温度数组的最后一个数值写入数据
-     
+
 #if defined(DEBUG_MODE)
     //Serial.begin(BAUDRATE);
-    Serial_in.printf("\nHB_WIFI  STARTING...\n");
+    Serial_in.printf("\nTo_artisan.BT:%f\n",To_artisan.BT);
 #endif
 
     }
@@ -540,7 +540,7 @@ Serial_in.printf("\nStart Task...\n");
 
   //Init pwm output
     pwm.pause();
-    pwm.write(HEAT_OUT_PIN, 0, user_wifi.PWM_FREQ_HEAT, resolution);
+    pwm.write(HEAT_OUT_PIN, 0, PWM_FREQ, resolution);
   
     pwm.resume();
     pwm.printDebug();
