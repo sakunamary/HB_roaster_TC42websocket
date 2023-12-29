@@ -156,7 +156,7 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 2000/ portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -169,19 +169,21 @@ void task_get_data(void *pvParameters)
         if (cmd_chan1300 == true ) {
             //Serial.println("send chan;1300");
             Serial.write("CHAN;1300\n");
-            Serial.flush();
-            while (Serial.read() >=0 ) {}//clean buffer
-            vTaskDelay(200);
-            Serial.write("READ\n");
-            Serial.flush();
-            vTaskDelay(500);
 
-            if(Serial.available()>0){
+            while (Serial.read() >=0 ) {}//clean buffer
+            Serial.flush();
+            vTaskDelay(200);
+
+            Serial.write("READ\n");
+            //Serial.flush();
+            vTaskDelay(1000);
+            
                 MsgString_1300 = Serial.readStringUntil('C');
                 MsgString_1300.concat('C');
-            } 
+               
 
-            while (Serial.read() >=0 ) {}//clean buffer
+            Serial.printf("\ninput MsgString_1300:%s\n",MsgString_1300);
+        
             StringTokenizer tokens1300(MsgString_1300, ",");
 
             while(tokens1300.hasNext()){
@@ -197,17 +199,17 @@ void task_get_data(void *pvParameters)
                     MsgString_1300 = "";    
                     i=0;    
             while (Serial.read() >=0 ) {}//clean buffeR
-            cmd_chan1300 = false ;
+            cmd_chan1300 = true ;
 
             } else {
 
             //Serial.println("send chan;1300");
             Serial.write("CHAN;2400\n");
-            Serial.flush();
+            //Serial.flush();
             while (Serial.read() >=0 ) {}//clean buffer
             vTaskDelay(200);
             Serial.write("READ\n");
-            Serial.flush();
+           // Serial.flush();
             vTaskDelay(500);
 
             if(Serial.available()>0){
@@ -246,7 +248,7 @@ void task_send_Hreg(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 2000/ portTICK_PERIOD_MS;
 
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
