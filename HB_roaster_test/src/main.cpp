@@ -156,7 +156,7 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 3000/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -172,15 +172,14 @@ void task_get_data(void *pvParameters)
             //while (Serial.read() >=0 ) {}//clean buffer
             vTaskDelay(200);
             Serial.print("READ\n");
-           // Serial.flush();
-            vTaskDelay(500);
+            vTaskDelay(400);
 
-            if(Serial.available()>0){
+            if(Serial.available()){
                 MsgString_1300 = Serial.readStringUntil('C');
+                Serial.printf("\nSerial input:%s\n",MsgString_1300);
                 MsgString_1300.concat('C');
-            } 
 
-            Serial.printf("\nSerial input:%s\n",MsgString_1300);
+            } 
 
             while (Serial.read() >=0 ) {}//clean buffer
             StringTokenizer tokens1300(MsgString_1300, ",");
@@ -195,23 +194,22 @@ void task_get_data(void *pvParameters)
                             To_artisan.ET = MSG_token1300[2].toDouble();
                             xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                     } //释放mutex
-                    MsgString_1300 = "";    
-                    i=0;    
-            while (Serial.read() >=0 ) {}//clean buffeR
-            cmd_chan1300 = true ;
+            MsgString_1300 = "";    
+            i=0;    
+            //while (Serial.read() >=0 ) {}//clean buffeR
+            Serial.flush();
+            cmd_chan1300 = false ;
 
             } else {
 
             //Serial.println("send chan;1300");
             Serial.write("CHAN;2400\n");
-            //Serial.flush();
-            while (Serial.read() >=0 ) {}//clean buffer
+            Serial.flush();
             vTaskDelay(200);
             Serial.write("READ\n");
-           // Serial.flush();
-            vTaskDelay(500);
+            vTaskDelay(400);
 
-            if(Serial.available()>0){
+            if(Serial.available()){
                 MsgString_2400 = Serial.readStringUntil('C');
                 MsgString_2400.concat('C');
             } 
@@ -229,11 +227,10 @@ void task_get_data(void *pvParameters)
                             To_artisan.inlet = MSG_token2400[2].toDouble();
                             xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                     } //释放mutex
-                    MsgString_2400 = "";    
-                    i=0;    
-            while (Serial.read() >=0 ) {}//clean buffeR
+            MsgString_2400 = "";    
+            i=0;    
+            Serial.flush();
             cmd_chan1300 = true ;
-
         }
      }
 }//function 
@@ -293,7 +290,7 @@ void setup() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(user_wifi.ssid, user_wifi.password);
 
-    byte tries = 0;
+    byte tries = 0; 
     while (WiFi.status() != WL_CONNECTED)
     {
 
@@ -484,6 +481,6 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
        pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000), PWM_FREQ, resolution); //自动模式下，将heat数值转换后输出到pwm
  
 
-delay(50);
+vTaskDelay(50);
 
 }
