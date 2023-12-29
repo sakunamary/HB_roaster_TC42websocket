@@ -38,7 +38,10 @@ String MsgString;
 
 String MSG_token1300[4];
 String MSG_token2400[4];
+bool cmd_chan1300 = true;
 
+String MsgString_1300;
+String MsgString_2400;
 
 int16_t  heat_from_Hreg = 0;
 int16_t  heat_from_enc  = 0;
@@ -146,8 +149,6 @@ void onOTAEnd(bool success) {
 }
 
 
-
-
 void task_get_data(void *pvParameters)
 { //function 
 
@@ -155,7 +156,7 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 2000/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -165,63 +166,75 @@ void task_get_data(void *pvParameters)
         // Wait for the next cycle (intervel 1s).
          vTaskDelayUntil(&xLastWakeTime, xIntervel);
 
-        //获取数据
-            StringTokenizer tokens(MsgString, ",");
-
-            Serial.print("CHAN;1300\n");
-            delay(20);
+        if (cmd_chan1300 == true ) {
+            //Serial.println("send chan;1300");
+            Serial.write("CHAN;1300\n");
             Serial.flush();
+            while (Serial.read() >=0 ) {}//clean buffer
+            vTaskDelay(200);
+            Serial.write("READ\n");
+            Serial.flush();
+            vTaskDelay(500);
 
-            Serial.print("READ\n");
-            delay(20);
             if(Serial.available()>0){
-                MsgString = Serial.readStringUntil('C');
-                MsgString.concat('C');
+                MsgString_1300 = Serial.readStringUntil('C');
+                MsgString_1300.concat('C');
             } 
-            while(tokens.hasNext()){
-                   MSG_token1300[i]=tokens.nextToken(); // prints the next token in the string
-                  // Serial.println(MSG_token[i]);
-                   i++;
+
+            while (Serial.read() >=0 ) {}//clean buffer
+            StringTokenizer tokens1300(MsgString_1300, ",");
+
+            while(tokens1300.hasNext()){
+                    MSG_token1300[i]=tokens1300.nextToken(); // prints the next token in the string
+                    i++;
                 }
-            if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
+                    if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) 
+                        {
+                            To_artisan.BT = MSG_token1300[1].toDouble();
+                            To_artisan.ET = MSG_token1300[2].toDouble();
+                            xSemaphoreGive(xGetDataMutex);  //end of lock mutex
+                    } //释放mutex
+                    MsgString_1300 = "";    
+                    i=0;    
+            while (Serial.read() >=0 ) {}//clean buffeR
+            cmd_chan1300 = false ;
 
-                {//lock the  mutex    
-                    To_artisan.BT = MSG_token1300[1].toFloat();
-                    To_artisan.ET = MSG_token1300[2].toFloat();
+            } else {
 
-                xSemaphoreGive(xGetDataMutex);  //end of lock mutex
-                }   
-                
-            MsgString = "";
-            i=0;
-
-            Serial.print("CHAN;2400\n");
-            delay(20);
+            //Serial.println("send chan;1300");
+            Serial.write("CHAN;2400\n");
             Serial.flush();
+            while (Serial.read() >=0 ) {}//clean buffer
+            vTaskDelay(200);
+            Serial.write("READ\n");
+            Serial.flush();
+            vTaskDelay(500);
 
-            Serial.print("READ\n");
-            delay(20);
             if(Serial.available()>0){
-                MsgString = Serial.readStringUntil('C');
-                MsgString.concat('C');
-            }   
+                MsgString_2400 = Serial.readStringUntil('C');
+                MsgString_2400.concat('C');
+            } 
 
+            while (Serial.read() >=0 ) {}//clean buffer
+            StringTokenizer tokens2400(MsgString_2400, ",");
 
-            while(tokens.hasNext()){
-                   MSG_token2400[i]=tokens.nextToken(); // prints the next token in the string
-                  // Serial.println(MSG_token[i]);
-                   i++;
+            while(tokens2400.hasNext()){
+                    MSG_token2400[i]=tokens2400.nextToken(); // prints the next token in the string
+                    i++;
                 }
-            if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS)  //给温度数组的最后一个数值写入数据
-                {//lock the  mutex       
-                        To_artisan.AP = MSG_token2400[1].toDouble();
-                        To_artisan.inlet = MSG_token2400[2].toDouble();
-                        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
-                }   
-                
-            MsgString = "";
-            i=0;   
-    }
+                    if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) 
+                        {
+                            To_artisan.AP = MSG_token2400[1].toDouble();
+                            To_artisan.inlet = MSG_token2400[2].toDouble();
+                            xSemaphoreGive(xGetDataMutex);  //end of lock mutex
+                    } //释放mutex
+                    MsgString_2400 = "";    
+                    i=0;    
+            while (Serial.read() >=0 ) {}//clean buffeR
+            cmd_chan1300 = true ;
+
+        }
+     }
 }//function 
 
 
