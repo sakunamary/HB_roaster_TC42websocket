@@ -11,7 +11,7 @@
 #define VERSION "1.0.4"
 
 
-#define DEBUG_MODE
+#define DEBUG_MODE 
 #define TXD 16
 #define RXD 17
 
@@ -25,7 +25,7 @@
 
 //pwm setting 
 #define PWM_FREQ 10000
-#define PWM_RESOLUTION 8 //0-1024
+#define PWM_RESOLUTION 10 //0-1024
 
 // 网页设置的参数
  typedef struct eeprom_settings 

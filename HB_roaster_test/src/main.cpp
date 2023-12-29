@@ -1,14 +1,14 @@
 #include <Arduino.h>
 #include "config.h"
 #include "EEPROM.h"
-#include <WiFi.h>
-#include <AsyncTCP.h>
-#include <AsyncUDP.h>
-#include <ESPAsyncWebServer.h>
-#include "Update.h"
 
 
-#include <HardwareSerial.h>
+  #include <WiFi.h>
+  #include <WiFiClient.h>
+  #include <WebServer.h>
+  #include <ElegantOTA.h>
+
+//#include <HardwareSerial.h>
 
 #include <StringTokenizer.h>
 //#include <WebSerial.h>
@@ -24,13 +24,11 @@
 
 
 
-HardwareSerial Serial_in(0);
-//HardwareSerial Serial_in(2);
+//HardwareSerial Serial(0);
+//HardwareSerial Serial(2);
 SemaphoreHandle_t xGetDataMutex = NULL;
 
-AsyncWebServer server(80);
-
-//AsyncWebSocket ws("/websocket"); // access at ws://[esp ip]/
+unsigned long ota_progress_millis = 0;
 
 char ap_name[30] ;
 uint8_t macAddr[6];
@@ -62,8 +60,6 @@ const uint32_t frequency = PWM_FREQ;
 const byte resolution = PWM_RESOLUTION; //pwm -0-4096
 
 
-
-
 //Modbus Registers Offsets
 const uint16_t BT_HREG = 3001;
 const uint16_t ET_HREG = 3002;
@@ -76,15 +72,15 @@ const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
 
 
 
-void notFound(AsyncWebServerRequest *request);    
-void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);//Handle WebSocket event
-void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){}
+//void notFound(AsyncWebServerRequest *request);    
+//void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);//Handle WebSocket event
+//void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){}
 String IpAddressToString(const IPAddress &ipAddress);      
 static IRAM_ATTR void enc_cb(void* arg);
 void task_send_Hreg(void *pvParameters);
 void task_get_data(void *pvParameters);
 
-
+  WebServer server(80);
 
 
 //ModbusIP object
@@ -121,130 +117,34 @@ String processor(const String &var)
     
     return String();
 }
-/*
-void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
-
-     //    {"command": "getData", "id": 93609, "roasterID": 0}
-    // Artisan schickt Anfrage als TXT
-    // TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
-
-    TickType_t xLastWakeTime;
-
-    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
-
-   const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
-    DynamicJsonDocument doc(capacity);
-
-    switch (type)
-    {
-    case WS_EVT_DISCONNECT:
-        Serial.printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
-        break;
-    case WS_EVT_CONNECT:
-        //client connected
-         Serial.printf("ws[%s][%u] connect\n", server->url(), client->id());
-         client->printf("Hello Client %u :", client->id());
-         client->ping();
-        break;
-    case WS_EVT_ERROR:
-        //error was received from the other end
-         Serial.printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
-        break;
-    case WS_EVT_PONG:
-        //pong message was received (in response to a ping request maybe)
-        Serial.printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");   
-        break;   
-    case WS_EVT_DATA:
-        AwsFrameInfo * info = (AwsFrameInfo*)arg;
-       if(info->final && info->index == 0 && info->len == len){
-
-         Serial.printf("ws[%s][%u] %s-message[%llu]: ",server->url(), client->id(), (info->opcode == WS_TEXT)?"text":"binary", info->len);
-
-            if(info->opcode == WS_TEXT){
-                    // Extract Values lt. https://arduinojson.org/v6/example/http-client/
-                    // Artisan Anleitung: https://artisan-scope.org/devices/websockets/
-                    deserializeJson(doc, (char *)data);
-                    // char* entspricht String
-                    String command = doc["command"].as<  const char *>();
-                    // Serial_debug.printf("Command received: %s \n",command);
-                    long ln_id = doc["id"].as<long>();
-
-                  if(!doc["HeatVal"].isNull()) //发送Heat level
-                    {
-                      heat_from_Artisan = doc["HeatVal"].as<long>();
-
-                        if (heat_from_Artisan >0 && heat_from_Artisan < 100
-                           &&  (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) )
-                           {//给温度数组的最后一个数值写入数据   ){// 过滤TargetC -1 和 大于100 值。
-                            To_artisan.heat_level=heat_from_Artisan;
-                            xSemaphoreGive(xGetDataMutex);  //end of lock mutex
-                        }    
-            }  
 
 
 
-                    // Send Values to Artisan over Websocket
-                    JsonObject root = doc.to<JsonObject>();
-                    JsonObject data = root.createNestedObject("data");
 
-                if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {//给温度数组的最后一个数值写入数据   
-
-                    if (command == "getBT")
-                    {
-                        root["id"] = ln_id;
-                        data["BT"] = To_artisan.BT;
-                    }
-                    else if (command == "getET")
-                    {
-                        root["id"] = ln_id;
-                        data["ET"] = To_artisan.ET;
-                    }
-                    else if (command == "getInlet")
-                    {
-                        root["id"] = ln_id;
-                        data["Inlet"] = To_artisan.inlet;
-                    }
-                    else if (command == "getAP")
-                    {
-                        root["id"] = ln_id;
-                        data["AP"] = To_artisan.AP;
-                    }
-                    else if (command == "getHEAT")
-                    {
-                        root["id"] = ln_id;
-                        data["HEAT"] = To_artisan.heat_level;
-                    }
-                    else if (command == "getData")
-                    {
-                        root["id"] = ln_id;
-                        data["BT"] = To_artisan.BT;
-                        data["ET"] = To_artisan.ET;
-                        data["AP"] = To_artisan.AP;
-                        data["Inlet"] = To_artisan.inlet;     
-                        //data["HEAT"] = To_artisan.heat_level;                   
-                    }
-
-                    xSemaphoreGive(xGetDataMutex);  //end of lock mutex
-                } 
-
-
-                    char buffer[200];                        // create temp buffer 200
-                    size_t len = serializeJson(doc, buffer); // serialize to buffer
-
-                    Serial.println(buffer);
-                    client->text(buffer);
-                }
-            }   
-    break;
-    }
+void onOTAStart() {
+  // Log when OTA has started
+  Serial.println("OTA update started!");
+  // <Add your own code here>
 }
-*/
 
-
-void notFound(AsyncWebServerRequest *request)
-{
-    request->send(404, "text/plain", "Opps....Not found");
+void onOTAProgress(size_t current, size_t final) {
+  // Log every 1 second
+  if (millis() - ota_progress_millis > 1000) {
+    ota_progress_millis = millis();
+    Serial.printf("OTA Progress Current: %u bytes, Final: %u bytes\n", current, final);
+  }
 }
+
+void onOTAEnd(bool success) {
+  // Log when OTA has finished
+  if (success) {
+    Serial.println("OTA update finished successfully!");
+  } else {
+    Serial.println("There was an error during OTA update!");
+  }
+  // <Add your own code here>
+}
+
 
 
 
@@ -268,14 +168,14 @@ void task_get_data(void *pvParameters)
         //获取数据
             StringTokenizer tokens(MsgString, ",");
 
-            Serial_in.print("CHAN;1300\n");
+            Serial.print("CHAN;1300\n");
             delay(20);
-            Serial_in.flush();
+            Serial.flush();
 
-            Serial_in.print("READ\n");
+            Serial.print("READ\n");
             delay(20);
-            if(Serial_in.available()>0){
-                MsgString = Serial_in.readStringUntil('C');
+            if(Serial.available()>0){
+                MsgString = Serial.readStringUntil('C');
                 MsgString.concat('C');
             } 
             while(tokens.hasNext()){
@@ -295,14 +195,14 @@ void task_get_data(void *pvParameters)
             MsgString = "";
             i=0;
 
-            Serial_in.print("CHAN;2400\n");
+            Serial.print("CHAN;2400\n");
             delay(20);
-            Serial_in.flush();
+            Serial.flush();
 
-            Serial_in.print("READ\n");
+            Serial.print("READ\n");
             delay(20);
-            if(Serial_in.available()>0){
-                MsgString = Serial_in.readStringUntil('C');
+            if(Serial.available()>0){
+                MsgString = Serial.readStringUntil('C');
                 MsgString.concat('C');
             }   
 
@@ -354,7 +254,7 @@ void task_send_Hreg(void *pvParameters)
 
 #if defined(DEBUG_MODE)
     //Serial.begin(BAUDRATE);
-    Serial_in.printf("\nTo_artisan.BT:%f\n",To_artisan.BT);
+    Serial.printf("\nTo_artisan.BT:%f\n",To_artisan.BT);
 #endif
 
     }
@@ -369,10 +269,10 @@ void setup() {
 
     pinMode(HEAT_OUT_PIN, OUTPUT); 
 
-    Serial_in.begin(BAUDRATE, SERIAL_8N1, RXD, TXD);
+    Serial.begin(BAUDRATE, SERIAL_8N1, RXD, TXD);
 #if defined(DEBUG_MODE)
     //Serial.begin(BAUDRATE);
-    Serial_in.printf("\nHB_WIFI  STARTING...\n");
+    Serial.printf("\nHB_WIFI  STARTING...\n");
 #endif
 
   //初始化网络服务
@@ -398,7 +298,7 @@ void setup() {
         // show AP's IP
     }
 #if defined(DEBUG_MODE)
-    Serial_in.printf("\nRead data from EEPROM...\n");
+    Serial.printf("\nRead data from EEPROM...\n");
 #endif
     // set up eeprom data
     EEPROM.begin(sizeof(user_wifi));
@@ -416,22 +316,22 @@ void setup() {
 //     EEPROM.commit();
 // }
 #if defined(DEBUG_MODE)
-   Serial_in.print("HB_WIFI's IP:");
+   Serial.print("HB_WIFI's IP:");
 #endif
 
 
     if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
     {
-        Serial_in.println(IpAddressToString(WiFi.softAPIP()));
+        Serial.println(IpAddressToString(WiFi.softAPIP()));
         local_IP = IpAddressToString(WiFi.softAPIP());
     }
     else
     {
-        Serial_in.println(IpAddressToString(WiFi.localIP()));
+        Serial.println(IpAddressToString(WiFi.localIP()));
         local_IP = IpAddressToString(WiFi.localIP());
     }
 #if defined(DEBUG_MODE)
-Serial_in.printf("\nStart Task...\n");
+Serial.printf("\nStart Task...\n");
 #endif
     /*---------- Task Definition ---------------------*/
     // Setup tasks to run independently.
@@ -445,7 +345,7 @@ Serial_in.printf("\nStart Task...\n");
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
 
-    Serial_in.printf("\nTASK1:get_data...\n");
+    Serial.printf("\nTASK1:get_data...\n");
 
 
  xTaskCreatePinnedToCore(
@@ -457,98 +357,30 @@ Serial_in.printf("\nStart Task...\n");
         ,
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
+#if defined(DEBUG_MODE)
+    Serial.printf("\nTASK2:get_dsend_Hregata...\n");
+#endif
 
-    Serial_in.printf("\nTASK2:get_dsend_Hregata...\n");
-
-
-    // init websocket
-   // Serial.println("WebSocket started!");
-    // attach AsyncWebSocket
-    //ws.onEvent(onEvent);
-    //server.addHandler(&ws);
-
-
-
-    // for index.html
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-                  { request->send_P(200, "text/html", index_html, processor); });
-
-    // get the value from index.html
-    server.on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
-                  {
-//get value form webpage      
-    strncpy(user_wifi.ssid,request->getParam("ssid")->value().c_str(), sizeof(user_wifi.ssid) );
-    strncpy(user_wifi.password,request->getParam("password")->value().c_str(), sizeof(user_wifi.password) );
-    user_wifi.ssid[request->getParam("ssid")->value().length()] = user_wifi.password[request->getParam("password")->value().length()] = '\0';  
-//Svae EEPROM 
-    EEPROM.put(0, user_wifi);
-    EEPROM.commit();
-//output wifi_sussce html;
-    request->send_P(200, "text/html", wifi_sussce_html); });
-
-
-  // upload a file to /upload
-  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
-    request->send(200);
-  }, onUpload);
-       // Simple Firmware Update Form
-  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
-                    {
-                    request->send(200, "text/html", update_html);
-                    });
-
-  server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
-                        //shouldReboot = !Update.hasError();
-                        AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", (Update.hasError())?update_fail_html:update_OK_html);
-                        response->addHeader("Connection", "close");
-                        request->send(response);
-                        },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
-                        if(!index){
-                        //vTaskSuspend(xHandle_indicator); //停止显示
-                      //  Serial.printf("Update Start: %s\n", filename.c_str());
-
-                        if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)){
-                            Update.printError(Serial);
-                        }
-                        }
-                        if(!Update.hasError()){
-                        if(Update.write(data, len) != len){
-                            Update.printError(Serial);
-                        }
-                        }
-                        if(final){
-                        if(Update.end(true)){
-                            //Serial.printf("Update Success: %uB\n", index+len);
-                           // Serial.printf("ESP32 will reboot after 3s \n");
-                            vTaskDelay(3000);
-                            ESP.restart();
-
-                        } else {
-                            Update.printError(Serial);
-                            //Serial.printf("ESP32 will reboot after 3s \n");
-                            vTaskDelay(3000);
-                            ESP.restart();
-                        }
-                        }
-  });         
-
-    server.onNotFound(notFound); // 404 page seems not necessary...
-    server.onFileUpload(onUpload);
+  ElegantOTA.begin(&server);    // Start ElegantOTA
+  // ElegantOTA callbacks
+  ElegantOTA.onStart(onOTAStart);
+  ElegantOTA.onProgress(onOTAProgress);
+  ElegantOTA.onEnd(onOTAEnd);
 
   server.begin();
-  Serial_in.println("HTTP server started");
-
+#if defined(DEBUG_MODE)
+  Serial.println("HTTP server started");
+#endif
   //Init pwm output
     pwm.pause();
-    pwm.write(HEAT_OUT_PIN, 0, PWM_FREQ, resolution);
-  
+    pwm.write(PWM_HEAT,0, PWM_FREQ, PWM_RESOLUTION);
     pwm.resume();
     pwm.printDebug();
-
-    Serial_in.println("PWM started");  
+#if defined(DEBUG_MODE)
+    Serial.println("PWM started");  
    
-    Serial_in.printf("\nStart INPUT ENCODER  service...\n");
-
+    Serial.printf("\nStart INPUT ENCODER  service...\n");
+#endif
 //init ENCODER
 	// Enable the weak pull up resistors
 
@@ -558,12 +390,16 @@ Serial_in.printf("\nStart Task...\n");
     encoder.clearCount();
     encoder.setFilter(1023);
     esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
+
+#if defined(DEBUG_MODE)    
     Serial.println("Encoder started"); 
-   // Serial.printf("Encoder now count: %d\n", encoder.getCount()); 
+#endif
+
+
 //Init Modbus-TCP 
-
-    Serial_in.printf("\nStart Modbus-TCP   service...\n");
-
+#if defined(DEBUG_MODE)
+    Serial.printf("\nStart Modbus-TCP   service...\n");
+#endif
     mb.server(502);		//Start Modbus IP //default port :502
     // Add SENSOR_IREG register - Use addIreg() for analog Inputs
     mb.addHreg(BT_HREG);
@@ -583,8 +419,8 @@ void loop() {
 
  const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
 //更新寄存器数据
- mb.task();
-
+  mb.task();
+  ElegantOTA.loop();
 
 // pwm output level 
 //    PC                                        MCU-value                   ENCODER read
@@ -631,7 +467,7 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
            }
        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
 }
-       pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
+       pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000), PWM_FREQ, resolution); //自动模式下，将heat数值转换后输出到pwm
  
 
 delay(50);
