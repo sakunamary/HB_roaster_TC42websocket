@@ -50,6 +50,7 @@ extern TaskHandle_t loopTaskHandle;
 const uint32_t frequency = PWM_FREQ;
 const byte resolution = PWM_RESOLUTION; //pwm -0-4096
 
+WebServer server(80);
 
 //Modbus Registers Offsets
 const uint16_t BT_HREG = 3001;
@@ -62,16 +63,10 @@ const uint16_t HEAT_HREG = 3004;
 const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
 
 
-
-//void notFound(AsyncWebServerRequest *request);    
-//void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);//Handle WebSocket event
-//void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){}
-String IpAddressToString(const IPAddress &ipAddress);      
 static IRAM_ATTR void enc_cb(void* arg);
 void task_send_Hreg(void *pvParameters);
 void task_get_data(void *pvParameters);
 
-  WebServer server(80);
 
 
 //ModbusIP object
@@ -85,7 +80,6 @@ Pwm pwm = Pwm();
 ESP32Encoder encoder(true);
 static IRAM_ATTR void enc_cb(void* arg) {
   ESP32Encoder* enc = (ESP32Encoder*) arg;
-            //enc->clearCount();
 }
 
 
@@ -161,13 +155,10 @@ void task_get_data(void *pvParameters)
                     } //释放mutex
             MsgString_1300 = "";    
             i=0;    
-            //while (Serial.read() >=0 ) {}//clean buffeR
             Serial.flush();
             cmd_chan1300 = false ;
 
             } else {
-
-            //Serial.println("send chan;1300");
             Serial.write("CHAN;2400\n");
             Serial.flush();
             vTaskDelay(200);
@@ -247,27 +238,12 @@ void setup() {
 
   //初始化网络服务
 
-            WiFi.macAddress(macAddr); 
-            // Serial_debug.println("WiFi.mode(AP):");
-            WiFi.mode(WIFI_AP);
-            sprintf( ap_name ,"HB_WIFI_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
-            WiFi.softAP(ap_name, "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
+    WiFi.macAddress(macAddr); 
+    // Serial_debug.println("WiFi.mode(AP):");
+    WiFi.mode(WIFI_AP);
+    sprintf( ap_name ,"HB_WIFI_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
+    WiFi.softAP(ap_name, "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
 
-#if defined(DEBUG_MODE)
-   Serial.print("HB_WIFI's IP:");
-#endif
-
-
-    if (WiFi.getMode() == 2) // 1:STA mode 2:AP mode
-    {
-        Serial.println(IpAddressToString(WiFi.softAPIP()));
-        local_IP = IpAddressToString(WiFi.softAPIP());
-    }
-    else
-    {
-        Serial.println(IpAddressToString(WiFi.localIP()));
-        local_IP = IpAddressToString(WiFi.localIP());
-    }
 #if defined(DEBUG_MODE)
 Serial.printf("\nStart Task...\n");
 #endif
@@ -299,15 +275,15 @@ Serial.printf("\nStart Task...\n");
     Serial.printf("\nTASK2:get_dsend_Hregata...\n");
 #endif
 
-  ElegantOTA.begin(&server);    // Start ElegantOTA
-  // ElegantOTA callbacks
-  ElegantOTA.onStart(onOTAStart);
-  ElegantOTA.onProgress(onOTAProgress);
-  ElegantOTA.onEnd(onOTAEnd);
+    ElegantOTA.begin(&server);    // Start ElegantOTA
+    // ElegantOTA callbacks
+    ElegantOTA.onStart(onOTAStart);
+    ElegantOTA.onProgress(onOTAProgress);
+    ElegantOTA.onEnd(onOTAEnd);
 
-  server.begin();
+    server.begin();
 #if defined(DEBUG_MODE)
-  Serial.println("HTTP server started");
+    Serial.println("HTTP server started");
 #endif
   //Init pwm output
     pwm.pause();
@@ -408,6 +384,6 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
        pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000), PWM_FREQ, resolution); //自动模式下，将heat数值转换后输出到pwm
  
 
-vTaskDelay(50);
+//vTaskDelay(50);
 
 }
