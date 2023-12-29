@@ -351,7 +351,11 @@ void task_send_Hreg(void *pvParameters)
         mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
         xSemaphoreGive(xGetDataMutex);  //end of lock mutex
      } //给温度数组的最后一个数值写入数据
-
+     
+#if defined(DEBUG_MODE)
+    //Serial.begin(BAUDRATE);
+    Serial_in.printf("\nHB_WIFI  STARTING...\n");
+#endif
 
     }
 
