@@ -22,10 +22,6 @@
 
 #include <ModbusIP_ESP8266.h>
 
-
-
-//HardwareSerial Serial(0);
-//HardwareSerial Serial(2);
 SemaphoreHandle_t xGetDataMutex = NULL;
 
 unsigned long ota_progress_millis = 0;
@@ -45,14 +41,6 @@ String MsgString_2400="";
 
 int16_t  heat_from_Hreg = 0;
 int16_t  heat_from_enc  = 0;
-
-
-user_wifi_t user_wifi = {
-                        " ", //char ssid[60]; //增加到30个字符
-                        " ", //char password[60]; //增加到30个字符
-                        PWM_FREQ,//int PWM_FREQ_HEAT;
-                        false //bool   Init_mode ; //是否初始化模式
-                        };
 
 data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0};
 
@@ -100,29 +88,6 @@ static IRAM_ATTR void enc_cb(void* arg) {
             //enc->clearCount();
 }
 
-String IpAddressToString(const IPAddress &ipAddress)
-{
-    return String(ipAddress[0]) + String(".") +
-           String(ipAddress[1]) + String(".") +
-           String(ipAddress[2]) + String(".") +
-           String(ipAddress[3]);
-}
-
-
-
-String processor(const String &var)
-{
-    Serial.println(var);
-  if (var == "version")
-    {
-        return VERSION;
-    }
-    
-    return String();
-}
-
-
-
 
 void onOTAStart() {
   // Log when OTA has started
@@ -156,7 +121,7 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 750/ portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -170,9 +135,9 @@ void task_get_data(void *pvParameters)
             Serial.print("CHAN;1300\n");
             Serial.flush();
             //while (Serial.read() >=0 ) {}//clean buffer
-            vTaskDelay(200);
+            vTaskDelay(100);
             Serial.print("READ\n");
-            vTaskDelay(400);
+            vTaskDelay(300);
 
             if(Serial.available()){
                 MsgString_1300 = Serial.readStringUntil('C');
@@ -244,7 +209,7 @@ void task_send_Hreg(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 2000/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
 
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
@@ -262,12 +227,6 @@ void task_send_Hreg(void *pvParameters)
         mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
         xSemaphoreGive(xGetDataMutex);  //end of lock mutex
      } //给温度数组的最后一个数值写入数据
-
-#if defined(DEBUG_MODE)
-    //Serial.begin(BAUDRATE);
-    Serial.printf("\nTo_artisan.BT:%f\n",To_artisan.BT);
-#endif
-
     }
 
 }
@@ -287,45 +246,13 @@ void setup() {
 #endif
 
   //初始化网络服务
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(user_wifi.ssid, user_wifi.password);
 
-    byte tries = 0; 
-    while (WiFi.status() != WL_CONNECTED)
-    {
-
-        delay(1000);
-       // Serial.println("wifi not ready");
-
-        if (tries++ > 5)
-        {
             WiFi.macAddress(macAddr); 
             // Serial_debug.println("WiFi.mode(AP):");
             WiFi.mode(WIFI_AP);
             sprintf( ap_name ,"HB_WIFI_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
             WiFi.softAP(ap_name, "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
-            break;
-        }
-        // show AP's IP
-    }
-#if defined(DEBUG_MODE)
-    Serial.printf("\nRead data from EEPROM...\n");
-#endif
-    // set up eeprom data
-    EEPROM.begin(sizeof(user_wifi));
-    EEPROM.get(0, user_wifi);
 
- //user_wifi.Init_mode = true ;
-
-// if (user_wifi.Init_mode) 
-// {
-//     strcat(user_wifi.ssid,"HB_WIFI");
-//     strcat(user_wifi.password,"12345678");
-//     user_wifi.PWM_FREQ_HEAT = PWM_FREQ;
-//     user_wifi.Init_mode = false ;
-//     EEPROM.put(0, user_wifi);
-//     EEPROM.commit();
-// }
 #if defined(DEBUG_MODE)
    Serial.print("HB_WIFI's IP:");
 #endif
