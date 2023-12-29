@@ -40,8 +40,8 @@ String MSG_token1300[4];
 String MSG_token2400[4];
 bool cmd_chan1300 = true;
 
-String MsgString_1300;
-String MsgString_2400;
+String MsgString_1300="";
+String MsgString_2400="";
 
 int16_t  heat_from_Hreg = 0;
 int16_t  heat_from_enc  = 0;
@@ -156,7 +156,7 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 2000/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 3000/ portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -167,23 +167,22 @@ void task_get_data(void *pvParameters)
          vTaskDelayUntil(&xLastWakeTime, xIntervel);
 
         if (cmd_chan1300 == true ) {
-            //Serial.println("send chan;1300");
-            Serial.write("CHAN;1300\n");
-
-            while (Serial.read() >=0 ) {}//clean buffer
+            Serial.print("CHAN;1300\n");
             Serial.flush();
+            //while (Serial.read() >=0 ) {}//clean buffer
             vTaskDelay(200);
+            Serial.print("READ\n");
+           // Serial.flush();
+            vTaskDelay(500);
 
-            Serial.write("READ\n");
-            //Serial.flush();
-            vTaskDelay(1000);
-            
+            if(Serial.available()>0){
                 MsgString_1300 = Serial.readStringUntil('C');
                 MsgString_1300.concat('C');
-               
+            } 
 
-            Serial.printf("\ninput MsgString_1300:%s\n",MsgString_1300);
-        
+            Serial.printf("\nSerial input:%s\n",MsgString_1300);
+
+            while (Serial.read() >=0 ) {}//clean buffer
             StringTokenizer tokens1300(MsgString_1300, ",");
 
             while(tokens1300.hasNext()){
@@ -284,7 +283,7 @@ void setup() {
 
     pinMode(HEAT_OUT_PIN, OUTPUT); 
 
-    Serial.begin(BAUDRATE, SERIAL_8N1, RXD, TXD);
+    Serial.begin(BAUDRATE);
 #if defined(DEBUG_MODE)
     //Serial.begin(BAUDRATE);
     Serial.printf("\nHB_WIFI  STARTING...\n");
