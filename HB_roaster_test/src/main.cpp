@@ -42,7 +42,7 @@ String MsgString_2400="";
 int16_t  heat_from_Hreg = 0;
 int16_t  heat_from_enc  = 0;
 
-data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0};
+data_to_artisan_t To_artisan = {0.0,0.0,0.0,0.0,0};
 
 extern bool loopTaskWDTEnabled;
 extern TaskHandle_t loopTaskHandle;
@@ -90,7 +90,7 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 750/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -103,10 +103,10 @@ void task_get_data(void *pvParameters)
         if (cmd_chan1300 == true ) {
             Serial.print("CHAN;1300\n");
             Serial.flush();
-            vTaskDelay(100);
+            vTaskDelay(200);
             //while (Serial.read() >=0 ) {}//clean buffer
             Serial.print("READ\n");
-            vTaskDelay(400);
+            vTaskDelay(300);
 
             if(Serial.available()){
                 MsgString_1300 = Serial.readStringUntil('C');
@@ -136,9 +136,9 @@ void task_get_data(void *pvParameters)
             } else {
             Serial.write("CHAN;2400\n");
             Serial.flush();
-            vTaskDelay(100);           
+            vTaskDelay(200);           
             Serial.write("READ\n");
-            vTaskDelay(400);
+            vTaskDelay(300);
 
             if(Serial.available()){
                 MsgString_2400 = Serial.readStringUntil('C');
