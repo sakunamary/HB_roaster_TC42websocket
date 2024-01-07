@@ -3,10 +3,10 @@
 #include "EEPROM.h"
 
 
-  #include <WiFi.h>
-  #include <WiFiClient.h>
-  #include <WebServer.h>
-  #include <ElegantOTA.h>
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncElegantOTA.h>
 
 //#include <HardwareSerial.h>
 
@@ -50,7 +50,7 @@ extern TaskHandle_t loopTaskHandle;
 const uint32_t frequency = PWM_FREQ;
 const byte resolution = PWM_RESOLUTION; //pwm -0-4096
 
-WebServer server(80);// OTA
+AsyncWebServer server(80);
 
 //Modbus Registers Offsets
 const uint16_t BT_HREG = 3001;
@@ -82,31 +82,6 @@ static IRAM_ATTR void enc_cb(void* arg) {
   ESP32Encoder* enc = (ESP32Encoder*) arg;
 }
 
-/*
-void onOTAStart() {
-  // Log when OTA has started
-  Serial.println("OTA update started!");
-  // <Add your own code here>
-}
-
-void onOTAProgress(size_t current, size_t final) {
-  // Log every 1 second
-  if (millis() - ota_progress_millis > 1000) {
-    ota_progress_millis = millis();
-    Serial.printf("OTA Progress Current: %u bytes, Final: %u bytes\n", current, final);
-  }
-}
-
-void onOTAEnd(bool success) {
-  // Log when OTA has finished
-  if (success) {
-    Serial.println("OTA update finished successfully!");
-  } else {
-    Serial.println("There was an error during OTA update!");
-  }
-  // <Add your own code here>
-}
-*/
 
 void task_get_data(void *pvParameters)
 { //function 
@@ -127,8 +102,8 @@ void task_get_data(void *pvParameters)
 
         if (cmd_chan1300 == true ) {
             Serial.print("CHAN;1300\n");
-            vTaskDelay(100);
             Serial.flush();
+            vTaskDelay(100);
             //while (Serial.read() >=0 ) {}//clean buffer
             Serial.print("READ\n");
             vTaskDelay(400);
@@ -160,9 +135,8 @@ void task_get_data(void *pvParameters)
 
             } else {
             Serial.write("CHAN;2400\n");
-             vTaskDelay(100);           
             Serial.flush();
-
+            vTaskDelay(100);           
             Serial.write("READ\n");
             vTaskDelay(400);
 
@@ -248,6 +222,7 @@ void setup() {
 #if defined(DEBUG_MODE)
 Serial.printf("\nStart Task...\n");
 #endif
+
     /*---------- Task Definition ---------------------*/
     // Setup tasks to run independently.
     xTaskCreatePinnedToCore(
@@ -276,19 +251,13 @@ Serial.printf("\nStart Task...\n");
     Serial.printf("\nTASK2:get_dsend_Hregata...\n");
 #endif
 
-  server.on("/", []() {
-    server.send(200, "text/plain", "Hi! This is ElegantOTA Demo.");
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", "Hi! This is a sample response.");
   });
 
+  AsyncElegantOTA.begin(&server);    // Start AsyncElegantOTA
+  server.begin();
 
-
-    ElegantOTA.begin(&server);    // Start ElegantOTA
-    // ElegantOTA callbacks
-   // ElegantOTA.onStart(onOTAStart);
-   // ElegantOTA.onProgress(onOTAProgress);
-   // ElegantOTA.onEnd(onOTAEnd);
-
-    server.begin();
 #if defined(DEBUG_MODE)
     Serial.println("HTTP server started");
 #endif
@@ -341,8 +310,7 @@ void loop() {
  const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
 //更新寄存器数据
   mb.task();
-  server.handleClient();
-  ElegantOTA.loop();
+
 
 // pwm output level 
 //    PC                                        MCU-value                   ENCODER read
@@ -390,7 +358,6 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
 }
        pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000), PWM_FREQ, resolution); //自动模式下，将heat数值转换后输出到pwm
- 
 
 //vTaskDelay(50);
 
