@@ -50,7 +50,7 @@ extern TaskHandle_t loopTaskHandle;
 const uint32_t frequency = PWM_FREQ;
 const byte resolution = PWM_RESOLUTION; //pwm -0-4096
 
-WebServer server(80);
+WebServer server(80);// OTA
 
 //Modbus Registers Offsets
 const uint16_t BT_HREG = 3001;
@@ -82,7 +82,7 @@ static IRAM_ATTR void enc_cb(void* arg) {
   ESP32Encoder* enc = (ESP32Encoder*) arg;
 }
 
-
+/*
 void onOTAStart() {
   // Log when OTA has started
   Serial.println("OTA update started!");
@@ -106,7 +106,7 @@ void onOTAEnd(bool success) {
   }
   // <Add your own code here>
 }
-
+*/
 
 void task_get_data(void *pvParameters)
 { //function 
@@ -127,11 +127,11 @@ void task_get_data(void *pvParameters)
 
         if (cmd_chan1300 == true ) {
             Serial.print("CHAN;1300\n");
+            vTaskDelay(100);
             Serial.flush();
             //while (Serial.read() >=0 ) {}//clean buffer
-            vTaskDelay(100);
             Serial.print("READ\n");
-            vTaskDelay(300);
+            vTaskDelay(400);
 
             if(Serial.available()){
                 MsgString_1300 = Serial.readStringUntil('C');
@@ -160,8 +160,9 @@ void task_get_data(void *pvParameters)
 
             } else {
             Serial.write("CHAN;2400\n");
+             vTaskDelay(100);           
             Serial.flush();
-            vTaskDelay(200);
+
             Serial.write("READ\n");
             vTaskDelay(400);
 
@@ -275,11 +276,17 @@ Serial.printf("\nStart Task...\n");
     Serial.printf("\nTASK2:get_dsend_Hregata...\n");
 #endif
 
+  server.on("/", []() {
+    server.send(200, "text/plain", "Hi! This is ElegantOTA Demo.");
+  });
+
+
+
     ElegantOTA.begin(&server);    // Start ElegantOTA
     // ElegantOTA callbacks
-    ElegantOTA.onStart(onOTAStart);
-    ElegantOTA.onProgress(onOTAProgress);
-    ElegantOTA.onEnd(onOTAEnd);
+   // ElegantOTA.onStart(onOTAStart);
+   // ElegantOTA.onProgress(onOTAProgress);
+   // ElegantOTA.onEnd(onOTAEnd);
 
     server.begin();
 #if defined(DEBUG_MODE)
@@ -334,6 +341,7 @@ void loop() {
  const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
 //更新寄存器数据
   mb.task();
+  server.handleClient();
   ElegantOTA.loop();
 
 // pwm output level 
