@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "config.h"
-#include "EEPROM.h"
+
 
 
 #include <WiFi.h>
@@ -8,11 +8,10 @@
 #include <ESPAsyncWebServer.h>
 #include <AsyncElegantOTA.h>
 
-//#include <HardwareSerial.h>
+
 
 #include <StringTokenizer.h>
-//#include <WebSerial.h>
-//
+
 
 #include "ArduinoJson.h"
 
@@ -333,10 +332,9 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
             
 
             To_artisan.heat_level = 0;
-            //heat_from_Artisan= To_artisan.heat_level ; 
+ 
             mb.Hreg(HEAT_HREG,To_artisan.heat_level);
             encoder.clearCount();
-            //encoder.setCount(100);
             heat_from_enc=0;
             
 
@@ -344,7 +342,7 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
 
             To_artisan.heat_level = 100;
             mb.Hreg(HEAT_HREG,To_artisan.heat_level);
-            //heat_from_Artisan= To_artisan.heat_level ; 
+
             encoder.clearCount();
             heat_from_enc=0; 
 
@@ -353,7 +351,6 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
 
             To_artisan.heat_level = heat_from_enc + To_artisan.heat_level;
             mb.Hreg(HEAT_HREG,To_artisan.heat_level);
-            //heat_from_Artisan= To_artisan.heat_level ; 
             encoder.clearCount();
             heat_from_enc=0;
 
