@@ -28,6 +28,8 @@ unsigned long ota_progress_millis = 0;
 char ap_name[30] ;
 uint8_t macAddr[6];
 
+int i = 0;
+
 String local_IP;
 String MsgString;
 
@@ -93,17 +95,23 @@ void task_get_data(void *pvParameters)
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
-    int i = 0;
+        Serial.print("CHAN;1300\n");
+        Serial.flush();
+        vTaskDelay(200);
+        while (Serial.read() >=0 ) {}//clean buffer
+
+
+    //int i = 0;
     for (;;) // A Task shall never return or exit.
     { //for loop
         // Wait for the next cycle (intervel 1s).
          vTaskDelayUntil(&xLastWakeTime, xIntervel);
 
         if (cmd_chan1300 == true ) {
-            Serial.print("CHAN;1300\n");
-            Serial.flush();
-            vTaskDelay(200);
-            while (Serial.read() >=0 ) {}//clean buffer
+        //Serial.print("CHAN;1300\n");
+        //Serial.flush();
+            //vTaskDelay(200);
+           // while (Serial.read() >=0 ) {}//clean buffer
             Serial.print("READ\n");
             vTaskDelay(500);
 
@@ -132,7 +140,7 @@ void task_get_data(void *pvParameters)
             MsgString_1300 = "";    
             i=0;    
             Serial.flush();
-            cmd_chan1300 = false ;
+            cmd_chan1300 = true ;
             } 
             else {
             Serial.write("CHAN;2400\n");
@@ -169,37 +177,6 @@ void task_get_data(void *pvParameters)
         }
      }
 }//function 
-
-
-
-void task_send_Hreg(void *pvParameters)
-{ //function 
-
-    /* Variable Definition */
-    (void)pvParameters;
-    TickType_t xLastWakeTime;
-
-    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
-
-    /* Task Setup and Initialize */
-    // Initial the xLastWakeTime variable with the current time.
-    xLastWakeTime = xTaskGetTickCount();
-    for (;;) // A Task shall never return or exit.
-       
-    { //for loop
-    // Wait for the next cycle (intervel 1s).
-    vTaskDelayUntil(&xLastWakeTime, xIntervel);
-     if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) 
-     {
-        mb.Hreg(BT_HREG,int(To_artisan.BT *100));
-        mb.Hreg(ET_HREG,int(To_artisan.ET *100));
-        mb.Hreg(AP_HREG,int(To_artisan.AP *100));
-        mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
-        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
-     } //给温度数组的最后一个数值写入数据
-    }
-
-}
 
 
 void setup() {
@@ -308,6 +285,7 @@ Serial.printf("\nStart Task...\n");
     mb.Hreg(INLET_HREG,0); //初始化赋值
     mb.Hreg(HEAT_HREG,0);  //初始化赋值
     mb.Hreg(AP_HREG,0);//初始化赋值
+
 }
 
 void loop() {
