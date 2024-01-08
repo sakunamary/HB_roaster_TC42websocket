@@ -56,8 +56,8 @@ AsyncWebServer server(80);
 const uint16_t BT_HREG = 3001;
 const uint16_t ET_HREG = 3002;
 const uint16_t AP_HREG = 3003;
-const uint16_t INLET_HREG = 3005;
-const uint16_t HEAT_HREG = 3004;
+const uint16_t INLET_HREG = 3004;
+const uint16_t HEAT_HREG = 3005;
 
 //Coil Pins
 const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
@@ -106,7 +106,7 @@ void task_get_data(void *pvParameters)
             vTaskDelay(200);
             //while (Serial.read() >=0 ) {}//clean buffer
             Serial.print("READ\n");
-            vTaskDelay(300);
+            vTaskDelay(500);
 
             if(Serial.available()){
                 MsgString_1300 = Serial.readStringUntil('C');
@@ -126,6 +126,8 @@ void task_get_data(void *pvParameters)
                         {
                             To_artisan.BT = MSG_token1300[1].toDouble();
                             To_artisan.ET = MSG_token1300[2].toDouble();
+                            mb.Hreg(BT_HREG,int(To_artisan.BT *100));
+                            mb.Hreg(ET_HREG,int(To_artisan.ET *100));
                             xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                     } //释放mutex
             MsgString_1300 = "";    
@@ -138,7 +140,7 @@ void task_get_data(void *pvParameters)
             Serial.flush();
             vTaskDelay(200);           
             Serial.write("READ\n");
-            vTaskDelay(300);
+            vTaskDelay(500);
 
             if(Serial.available()){
                 MsgString_2400 = Serial.readStringUntil('C');
@@ -156,6 +158,8 @@ void task_get_data(void *pvParameters)
                         {
                             To_artisan.AP = MSG_token2400[1].toDouble();
                             To_artisan.inlet = MSG_token2400[2].toDouble();
+                            mb.Hreg(AP_HREG,int(To_artisan.AP *100));
+                            mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
                             xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                     } //释放mutex
             MsgString_2400 = "";    
@@ -237,7 +241,7 @@ Serial.printf("\nStart Task...\n");
 
     Serial.printf("\nTASK1:get_data...\n");
 
-
+/*
  xTaskCreatePinnedToCore(
         task_send_Hreg, "send_Hreg" // 获取HB数据
         ,
@@ -247,10 +251,11 @@ Serial.printf("\nStart Task...\n");
         ,
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
+
 #if defined(DEBUG_MODE)
     Serial.printf("\nTASK2:get_dsend_Hregata...\n");
 #endif
-
+*/
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Hi! This is a sample response.");
   });
@@ -320,8 +325,6 @@ void loop() {
 
 heat_from_enc = encoder.getCount();
 
- //Serial.printf("heat_from_enc: %d\n", heat_from_enc);
-
 if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {  
         To_artisan.heat_level =  mb.Hreg(HEAT_HREG);//读取数据
 
@@ -359,6 +362,5 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
 }
        pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000), PWM_FREQ, resolution); //自动模式下，将heat数值转换后输出到pwm
 
-//vTaskDelay(50);
 
 }

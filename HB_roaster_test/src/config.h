@@ -3,7 +3,7 @@
 #define __CONFIG_H__
 
 
-#define VERSION "1.0.4"
+#define VERSION "1.0.5"
 
 
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
