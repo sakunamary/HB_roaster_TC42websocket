@@ -134,8 +134,8 @@ void task_get_data(void *pvParameters)
             i=0;    
             Serial.flush();
             cmd_chan1300 = false ;
-
-            } else {
+            } 
+            else {
             Serial.write("CHAN;2400\n");
             Serial.flush();
             vTaskDelay(200);           
