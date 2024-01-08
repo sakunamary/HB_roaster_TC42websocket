@@ -103,7 +103,7 @@ void task_get_data(void *pvParameters)
             Serial.print("CHAN;1300\n");
             Serial.flush();
             vTaskDelay(200);
-            //while (Serial.read() >=0 ) {}//clean buffer
+            while (Serial.read() >=0 ) {}//clean buffer
             Serial.print("READ\n");
             vTaskDelay(500);
 
@@ -137,7 +137,8 @@ void task_get_data(void *pvParameters)
             else {
             Serial.write("CHAN;2400\n");
             Serial.flush();
-            vTaskDelay(200);           
+            vTaskDelay(200);       
+            while (Serial.read() >=0 ) {}//clean buffer    
             Serial.write("READ\n");
             vTaskDelay(500);
 
