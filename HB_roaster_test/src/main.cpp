@@ -89,7 +89,7 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 2000/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -135,10 +135,10 @@ void task_get_data(void *pvParameters)
         {   
         Serial.print("CHAN;1300\n");
         Serial.flush();
-        vTaskDelay(200);
+        vTaskDelay(100);
         while (Serial.read() >=0 ) {}//clean buffer
         Serial.print("READ\n");
-        vTaskDelay(500);
+        vTaskDelay(400);
 
             if(Serial.available()){
                 MsgString_1300 = Serial.readStringUntil('C');
