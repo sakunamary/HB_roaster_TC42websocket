@@ -28,22 +28,20 @@ unsigned long ota_progress_millis = 0;
 char ap_name[30] ;
 uint8_t macAddr[6];
 
-int i = 0;
-
 String local_IP;
 String MsgString;
 
 String MSG_token1300[4];
-String MSG_token2400[4];
-bool cmd_chan1300 = true;
+
+int cmd_chan1300 = 0;
 
 String MsgString_1300="";
-String MsgString_2400="";
+int heat_level_to_artisan = 0;
 
 int16_t  heat_from_Hreg = 0;
 int16_t  heat_from_enc  = 0;
 
-data_to_artisan_t To_artisan = {0.0,0.0,0.0,0.0,0};
+//data_to_artisan_t To_artisan = {0.0,0.0,0.0,0.0,0};
 
 extern bool loopTaskWDTEnabled;
 extern TaskHandle_t loopTaskHandle;
@@ -56,8 +54,8 @@ AsyncWebServer server(80);
 //Modbus Registers Offsets
 const uint16_t BT_HREG = 3001;
 const uint16_t ET_HREG = 3002;
-const uint16_t AP_HREG = 3003;
-const uint16_t INLET_HREG = 3004;
+//const uint16_t AP_HREG = 3003;
+//const uint16_t INLET_HREG = 3004;
 const uint16_t HEAT_HREG = 3005;
 
 //Coil Pins
@@ -91,29 +89,56 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 2000/ portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
-        Serial.print("CHAN;1300\n");
-        Serial.flush();
-        vTaskDelay(200);
-        while (Serial.read() >=0 ) {}//clean buffer
-
-
-    //int i = 0;
+    int i = 0;
     for (;;) // A Task shall never return or exit.
     { //for loop
         // Wait for the next cycle (intervel 1s).
          vTaskDelayUntil(&xLastWakeTime, xIntervel);
 
-        if (cmd_chan1300 == true ) {
-        //Serial.print("CHAN;1300\n");
-        //Serial.flush();
-            //vTaskDelay(200);
-           // while (Serial.read() >=0 ) {}//clean buffer
-            Serial.print("READ\n");
-            vTaskDelay(500);
+        if (cmd_chan1300 < 5  ) {
+
+            if(Serial.available()){
+                MsgString_1300 = Serial.readStringUntil('C');
+                Serial.printf("\nSerial input:%s\n",MsgString_1300);
+                MsgString_1300.concat('C');
+
+            } 
+
+            while (Serial.read() >=0 ) {}//clean buffer
+            StringTokenizer tokens1300(MsgString_1300, ",");
+
+            while(tokens1300.hasNext()){
+                    MSG_token1300[i]=tokens1300.nextToken(); // prints the next token in the string
+                    i++;
+                }
+            if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) 
+                {
+                    //To_artisan.BT = MSG_token1300[1].toDouble();
+                    //To_artisan.ET = MSG_token1300[2].toDouble();
+                    //mb.Hreg(BT_HREG,int(To_artisan.BT *100)); //3001
+                    //mb.Hreg(ET_HREG,int(To_artisan.ET *100)); //3002
+
+                    mb.Hreg(BT_HREG,int(MSG_token1300[1].toDouble() *100)); //3001
+                    mb.Hreg(ET_HREG,int(MSG_token1300[2].toDouble() *100)); //3002
+
+                    xSemaphoreGive(xGetDataMutex);  //end of lock mutex
+                } //释放mutex
+            MsgString_1300 = "";    
+            i=0;    
+            Serial.flush();
+            cmd_chan1300++ ;
+        }  else 
+        {   
+        Serial.print("CHAN;1300\n");
+        Serial.flush();
+        vTaskDelay(200);
+        while (Serial.read() >=0 ) {}//clean buffer
+        Serial.print("READ\n");
+        vTaskDelay(500);
 
             if(Serial.available()){
                 MsgString_1300 = Serial.readStringUntil('C');
@@ -131,51 +156,23 @@ void task_get_data(void *pvParameters)
                 }
                     if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) 
                         {
-                            To_artisan.BT = MSG_token1300[1].toDouble();
-                            To_artisan.ET = MSG_token1300[2].toDouble();
-                            mb.Hreg(BT_HREG,int(To_artisan.BT *100));
-                            mb.Hreg(ET_HREG,int(To_artisan.ET *100));
-                            xSemaphoreGive(xGetDataMutex);  //end of lock mutex
+
+                        mb.Hreg(BT_HREG,int(MSG_token1300[1].toDouble() *100)); //3001
+                        mb.Hreg(ET_HREG,int(MSG_token1300[2].toDouble() *100)); //3002
+                           // To_artisan.BT = MSG_token1300[1].toDouble();
+                           // To_artisan.ET = MSG_token1300[2].toDouble();
+                           // mb.Hreg(BT_HREG,int(To_artisan.BT *100));
+                           // mb.Hreg(ET_HREG,int(To_artisan.ET *100));
+                        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                     } //释放mutex
             MsgString_1300 = "";    
             i=0;    
             Serial.flush();
-            cmd_chan1300 = true ;
-            } 
-            else {
-            Serial.write("CHAN;2400\n");
-            Serial.flush();
-            vTaskDelay(200);       
-            while (Serial.read() >=0 ) {}//clean buffer    
-            Serial.write("READ\n");
-            vTaskDelay(500);
-
-            if(Serial.available()){
-                MsgString_2400 = Serial.readStringUntil('C');
-                MsgString_2400.concat('C');
-            } 
-
             while (Serial.read() >=0 ) {}//clean buffer
-            StringTokenizer tokens2400(MsgString_2400, ",");
+            cmd_chan1300 = 0 ;
 
-            while(tokens2400.hasNext()){
-                    MSG_token2400[i]=tokens2400.nextToken(); // prints the next token in the string
-                    i++;
-                }
-                    if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) 
-                        {
-                            To_artisan.AP = MSG_token2400[1].toDouble();
-                            To_artisan.inlet = MSG_token2400[2].toDouble();
-                            mb.Hreg(AP_HREG,int(To_artisan.AP *100));
-                            mb.Hreg(INLET_HREG,int(To_artisan.inlet *100));
-                            xSemaphoreGive(xGetDataMutex);  //end of lock mutex
-                    } //释放mutex
-            MsgString_2400 = "";    
-            i=0;    
-            Serial.flush();
-            cmd_chan1300 = true ;
         }
-     }
+    }
 }//function 
 
 
@@ -276,16 +273,15 @@ Serial.printf("\nStart Task...\n");
     // Add SENSOR_IREG register - Use addIreg() for analog Inputs
     mb.addHreg(BT_HREG);
     mb.addHreg(ET_HREG);
-    mb.addHreg(INLET_HREG);
-    mb.addHreg(AP_HREG);
+    //mb.addHreg(INLET_HREG);
+    //mb.addHreg(AP_HREG);
     mb.addHreg(HEAT_HREG);
 
     mb.Hreg(BT_HREG,0); //初始化赋值
     mb.Hreg(ET_HREG,0);  //初始化赋值
-    mb.Hreg(INLET_HREG,0); //初始化赋值
+    //mb.Hreg(INLET_HREG,0); //初始化赋值
+    //mb.Hreg(AP_HREG,0);//初始化赋值
     mb.Hreg(HEAT_HREG,0);  //初始化赋值
-    mb.Hreg(AP_HREG,0);//初始化赋值
-
 }
 
 void loop() {
@@ -304,23 +300,23 @@ void loop() {
 heat_from_enc = encoder.getCount();
 
 if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {  
-        To_artisan.heat_level =  mb.Hreg(HEAT_HREG);//读取数据
+        heat_level_to_artisan  =  mb.Hreg(HEAT_HREG);//读取数据
 
        //HEAT 控制部分 
-       if ((To_artisan.heat_level + heat_from_enc) <= 0 && To_artisan.heat_level >=0 ) { //如果输入小于0值，自动限制在0
+       if ((heat_level_to_artisan  + heat_from_enc) <= 0 && heat_level_to_artisan  >=0 ) { //如果输入小于0值，自动限制在0
             
 
-            To_artisan.heat_level = 0;
+            heat_level_to_artisan  = 0;
  
-            mb.Hreg(HEAT_HREG,To_artisan.heat_level);
+            mb.Hreg(HEAT_HREG,heat_level_to_artisan );
             encoder.clearCount();
             heat_from_enc=0;
             
 
-       } else if ((To_artisan.heat_level + heat_from_enc) >= 100 && To_artisan.heat_level <= 100){//如果输入大于100值，自动限制在100
+       } else if ((heat_level_to_artisan  + heat_from_enc) >= 100 && heat_level_to_artisan  <= 100){//如果输入大于100值，自动限制在100
 
-            To_artisan.heat_level = 100;
-            mb.Hreg(HEAT_HREG,To_artisan.heat_level);
+            heat_level_to_artisan  = 100;
+            mb.Hreg(HEAT_HREG,heat_level_to_artisan );
 
             encoder.clearCount();
             heat_from_enc=0; 
@@ -328,15 +324,15 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
 
        } else { //To_artisan.heat_level 加减 encoder的增减量，再同步到
 
-            To_artisan.heat_level = heat_from_enc + To_artisan.heat_level;
-            mb.Hreg(HEAT_HREG,To_artisan.heat_level);
+            heat_level_to_artisan  = heat_from_enc + heat_level_to_artisan ;
+            mb.Hreg(HEAT_HREG,heat_level_to_artisan );
             encoder.clearCount();
             heat_from_enc=0;
 
            }
        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
 }
-       pwm.write(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000), PWM_FREQ, resolution); //自动模式下，将heat数值转换后输出到pwm
+       pwm.write(HEAT_OUT_PIN, map(heat_level_to_artisan ,0,100,250,1000), PWM_FREQ, resolution); //自动模式下，将heat数值转换后输出到pwm
 
 
 }

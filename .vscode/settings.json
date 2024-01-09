@@ -22,7 +22,8 @@
         "locale": "cpp",
         "hash_map": "cpp",
         "span": "cpp",
-        "format": "cpp"
+        "format": "cpp",
+        "ostream": "cpp"
     },
     "MicroPython.executeButton": [
         {
