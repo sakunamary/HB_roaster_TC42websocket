@@ -19,9 +19,6 @@
 
 #include <ModbusIP_ESP8266.h>
 
-#define ENCODER_DO_NOT_USE_INTERRUPTS
-#include <Encoder.h>
-
 
 ESP8266WebServer    server(80); //构建webserver类
 //WebSocketsServer webSocket = WebSocketsServer(8080); //构建websockets类
@@ -40,14 +37,14 @@ String MSG_token2400[4];
 
 
 user_wifi_t user_wifi = {" ", " "};
-data_to_artisan_t To_artisan = {1.0,2.0,3.0,4.0,0};
+data_to_artisan_t To_artisan = {0.0,0.0,0.0,0.0,0};
 
 
 //Modbus Registers Offsets
 const uint16_t BT_HREG = 3001;
 const uint16_t ET_HREG = 3002;
 const uint16_t INLET_HREG = 3003;
-const uint16_t HEAT_HREG = 3004;
+const uint16_t HEAT_HREG = 3005;
 
 int16_t  heat_from_Hreg = 0;
 int16_t  heat_from_enc  = 0;
@@ -57,10 +54,6 @@ const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
 
 //ModbusIP object
 ModbusIP mb;
-
-
-//ENCODER object 
-Encoder encoder(ENC_CLK, ENC_DT);
 
 
 //functions declear for PlatfromIO rules
@@ -88,114 +81,6 @@ String processor(const String &var)
     
     return String();
 }
-
-//Define Artisan Websocket events to exchange data
-// void webSocketEvent(uint8_t num, WStype_t type, uint8_t * data, size_t len) {
-// //    {"command": "getData", "id": 93609, "roasterID": 0}
-//   //Artisan schickt Anfrage als TXT
-//   //TXT zu JSON lt. https://forum.arduino.cc/t/assistance-parsing-and-reading-json-array-payload-websockets-solved/667917
-
-//     const size_t capacity = JSON_OBJECT_SIZE(3) + 60; // Memory pool
-//     DynamicJsonDocument doc(capacity);
-
-//     switch(type) {
-// /*
-//     WStype_ERROR,
-//     WStype_DISCONNECTED, ok
-//     WStype_CONNECTED, ok
-//     WStype_TEXT, ok
-//     WStype_BIN, ok
-//     WStype_FRAGMENT_TEXT_START,
-//     WStype_FRAGMENT_BIN_START,
-//     WStype_FRAGMENT,
-//     WStype_FRAGMENT_FIN,
-//     WStype_PING,
-//     WStype_PONG,
-// */
-
-//         case WStype_DISCONNECTED:
-//             //Serial_debug.printf("[%u] Disconnected!\n", num);
-//             break;
-//         case WStype_CONNECTED:
-//             {
-//                 IPAddress ip = webSocket.remoteIP(num);
-//                 //Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
-        
-//                 // send message to client
-//                 webSocket.sendTXT(num, "Connected");
-//             }
-//             break;
-//         case WStype_TEXT:
-//             { 
-//             //Extract Values lt. https://arduinojson.org/v6/example/http-client/
-//             //Artisan Anleitung: https://artisan-scope.org/devices/websockets/
-
-//             deserializeJson(doc, (char *)data);
-
-//             //char* entspricht String
-//             String command = doc["command"].as< const  char*>();
-//              //Serial_debug.printf("Command received: %s \n",command);  
-            
-//             long ln_id = doc["id"].as<long>();
-    
-//             // Send Values to Artisan over Websocket
-//             JsonObject root = doc.to<JsonObject>();
-//             JsonObject data = root.createNestedObject("data");
-
-
-//             if (command == "getBT")
-//             {
-//                 root["id"] = ln_id;
-//                 data["BT"] = To_artisan.BT;
-//             }
-//             else if (command == "getET")
-//             {
-//                 root["id"] = ln_id;
-//                 data["ET"] = To_artisan.ET;
-//             }
-
-//             else if (command == "getEnv")
-//             {
-//                 root["id"] = ln_id;
-//                 data["TEMP"] = To_artisan.temp_env;
-//                 data["HUMI"] = To_artisan.humi_env;
-                    
-//             }
-
-//             else if (command == "getData")
-//             {
-//                 root["id"] = ln_id;
-//                 data["BT"] = To_artisan.BT;
-//                 data["ET"] = To_artisan.ET;
-//                 data["AP"] = To_artisan.AP ;
-//                 data["inlet"] = To_artisan.inlet;                         
-//             }
-
-
-//             char buffer[200];                        // create temp buffer 200
-//             size_t len = serializeJson(doc, buffer); // serialize to buffer
-
-//              webSocket.sendTXT(num, buffer);
-
-//                 }
-//             break;
-//         /*  
-//         case WStype_BIN:
-//            // Serial_debug.printf("[%u] get binary length: %u\n", num, length);
-//             hexdump(data, len);
-
-//             // send message to client
-//             // webSocket.sendBIN(num, payload, length);
-//             break;
-// */ 
-        
-//         case WStype_PING:
-//         IPAddress ip = webSocket.remoteIP(num);
-//         //Serial.printf("[%u] PING from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], data);
-//             break;
-            
-//     }
-// }
 
 
 void task_get_data(){
@@ -225,8 +110,10 @@ void task_get_data(){
             i++;
         }
 
-            To_artisan.BT = MSG_token1300[1].toDouble();
-            To_artisan.ET = MSG_token1300[2].toDouble();
+            //To_artisan.BT = MSG_token1300[1].toDouble();
+            //To_artisan.ET = MSG_token1300[2].toDouble();
+            mb.Hreg(BT_HREG,int(MSG_token1300[1].toDouble() *100));
+            mb.Hreg(ET_HREG,int(MSG_token1300[2].toDouble() *100));
 
             MsgString_1300 = "";    
             i=0;    
@@ -259,6 +146,8 @@ void task_get_data(){
 
             To_artisan.AP = MSG_token2400[1].toDouble();
             To_artisan.inlet = MSG_token2400[2].toDouble();
+            mb.Hreg(INLET_HREG,int(To_artisan.AP *100));
+
 
             MsgString_2400 = "";    
             i=0;    
@@ -278,7 +167,6 @@ void Task_send_modbus(){
 
 
 TickTwo ticker_task_2s_get_date(task_get_data, 2000, 0, MILLIS); 
-TickTwo ticker_task_200ms_send_modbus(Task_send_modbus, 200, 0, MILLIS); 
 
 
 void handlePortal() {
