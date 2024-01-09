@@ -13,8 +13,12 @@
 //#define DEBUG_MODE 
 
 //pinout setting
-#define ENC_CLK  33
-#define ENC_DT   32
+//#define ENC_CLK  33
+//#define ENC_DT   32
+#define ROTARY_ENCODER_A_PIN 33
+#define ROTARY_ENCODER_B_PIN 32
+#define ROTARY_ENCODER_BUTTON_PIN 25
+#define ROTARY_ENCODER_STEPS 4
 #define PWM_HEAT 26
 
 

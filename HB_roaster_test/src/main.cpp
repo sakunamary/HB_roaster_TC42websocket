@@ -16,14 +16,15 @@
 #include "ArduinoJson.h"
 
 #include <pwmWrite.h>
-#include <ESP32Encoder.h>
-#include "esp_task_wdt.h"
+//#include <ESP32Encoder.h>
+#include "AiEsp32RotaryEncoder.h"
+#include "AiEsp32RotaryEncoderNumberSelector.h"
+
+//#include "esp_task_wdt.h"
 
 #include <ModbusIP_ESP8266.h>
 
 SemaphoreHandle_t xGetDataMutex = NULL;
-
-unsigned long ota_progress_millis = 0;
 
 char ap_name[30] ;
 uint8_t macAddr[6];
@@ -62,7 +63,7 @@ const uint16_t HEAT_HREG = 3005;
 const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
 
 
-static IRAM_ATTR void enc_cb(void* arg);
+//static IRAM_ATTR void enc_cb(void* arg);
 void task_send_Hreg(void *pvParameters);
 void task_get_data(void *pvParameters);
 
@@ -76,9 +77,17 @@ ModbusIP mb;
 Pwm pwm = Pwm();
 
 // rotary encoder object
+AiEsp32RotaryEncoder *rotaryEncoder = new AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, -1, ROTARY_ENCODER_STEPS);
+AiEsp32RotaryEncoderNumberSelector numberSelector = AiEsp32RotaryEncoderNumberSelector();
+
+/*
 ESP32Encoder encoder(true);
 static IRAM_ATTR void enc_cb(void* arg) {
   ESP32Encoder* enc = (ESP32Encoder*) arg;
+}*/
+void IRAM_ATTR readEncoderISR()
+{
+    rotaryEncoder->readEncoder_ISR();
 }
 
 
@@ -253,13 +262,19 @@ Serial.printf("\nStart Task...\n");
 //init ENCODER
 	// Enable the weak pull up resistors
 
+    rotaryEncoder->begin();
+    rotaryEncoder->setup(readEncoderISR);
+    numberSelector.attachEncoder(rotaryEncoder);
+    numberSelector.setRange(0, 100, 1, false, 1);
+    numberSelector.setValue(0);
+/*
     ESP32Encoder::useInternalWeakPullResistors=UP;
 
     encoder.attachSingleEdge(ENC_DT, ENC_CLK);
     encoder.clearCount();
     encoder.setFilter(1023);
     esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
-
+*/
 #if defined(DEBUG_MODE)    
     Serial.println("Encoder started"); 
 #endif
@@ -286,19 +301,26 @@ Serial.printf("\nStart Task...\n");
 
 void loop() {
 
- const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+ //const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
 //更新寄存器数据
   mb.task();
-
-
 // pwm output level 
 //    PC                                        MCU-value                   ENCODER read
 //Artisan-> heat_from_Artisan        >>    To_artisan.heat_level     <<     heat_from_enc
 //  heat_from_Artisan == heat_from_enc  in loop（） 
+    heat_level_to_artisan  =  mb.Hreg(HEAT_HREG);//读取当前寄存器数据 
+    numberSelector.setValue(heat_level_to_artisan);//同步寄存器数据到编码器中
+
+    if (rotaryEncoder->encoderChanged())
+    {
+        //heat_from_enc = encoder.getCount();
+       heat_level_to_artisan = numberSelector.getValue(); //获取变动后的编码器数值并更新到heat_level_to_artisan
+        mb.Hreg(HEAT_HREG, heat_level_to_artisan); //同步到最新的寄存器中
+
+    }
 
 
-heat_from_enc = encoder.getCount();
-
+/*
 if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {  
         heat_level_to_artisan  =  mb.Hreg(HEAT_HREG);//读取数据
 
@@ -332,6 +354,7 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
            }
        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
 }
+*/
        pwm.write(HEAT_OUT_PIN, map(heat_level_to_artisan ,0,100,250,1000), PWM_FREQ, resolution); //自动模式下，将heat数值转换后输出到pwm
 
 
