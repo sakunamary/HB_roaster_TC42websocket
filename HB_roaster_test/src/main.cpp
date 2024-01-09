@@ -23,7 +23,6 @@
 
 SemaphoreHandle_t xGetDataMutex = NULL;
 
-unsigned long ota_progress_millis = 0;
 
 char ap_name[30] ;
 uint8_t macAddr[6];
@@ -203,14 +202,14 @@ Serial.printf("\nStart Task...\n");
 
     /*---------- Task Definition ---------------------*/
     // Setup tasks to run independently.
-    xTaskCreatePinnedToCore(
+    xTaskCreate(
         task_get_data, "get_data" // 获取HB数据
         ,
         4096 // This stack size can be checked & adjusted by reading the Stack Highwater
         ,
         NULL, 2 // Priority, with 1 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
         ,
-        NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
+        NULL // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
 
     Serial.printf("\nTASK1:get_data...\n");
