@@ -16,8 +16,8 @@
 //#define RXD 17
 
 //pinout setting
-#define ENC_CLK  12
-#define ENC_DT   13
+//#define ENC_CLK  12
+//#define ENC_DT   13
 #define PWM_HEAT 16
 
 
@@ -35,24 +35,6 @@
 } user_wifi_t;
 
 extern user_wifi_t  user_wifi ;
-
-//定义artisan 交互的数组
-typedef struct  data_to_artisan {
-    double BT;
-    double ET;
-    double  AP;
-    double inlet;
-    int heat_level;
-/*
-            AT = float(res1300[0])
-            ET = float(res1300[1])
-            BT = float(res1300[2])
-            Inlet =float(res2400[1])
-*/
-
- } data_to_artisan_t ;
- extern data_to_artisan_t To_artisan;
-//end of 定义artisan 交互的数组
 
 
 
@@ -148,7 +130,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 <body>
     <main class='form-signin'> 
         <form action='/get' method='get'>
-            <h1 class=''>HB-WIFI 设置</h1>
+            <h1 class=''>HB-WIFI 设置 VERSION </h1>
             <h2 class=''>1.WIFI 设置</h2>
             <div class='form-floating'>
             <label>SSID/WIFI名字</label>
@@ -168,10 +150,6 @@ const char index_html[] PROGMEM = R"rawliteral(
             </div>
 
         </form> 
-            <p>
-            FIRMWARE verison:%version%
-            </p>
-            <br/>
     </main> 
 </body></html>
 )rawliteral";

@@ -9,8 +9,7 @@
 #include <StringTokenizer.h>
 
 #include "ArduinoJson.h"
-//Websockets Lib by links2004
-//#include <WebSocketsServer.h>
+
 //JSON for Artisan Websocket implementation
 #include "ArduinoJson.h"
 
@@ -37,18 +36,16 @@ String MSG_token2400[4];
 
 
 user_wifi_t user_wifi = {" ", " "};
-data_to_artisan_t To_artisan = {0.0,0.0,0.0,0.0,0};
-
 
 //Modbus Registers Offsets
 const uint16_t BT_HREG = 3001;
 const uint16_t ET_HREG = 3002;
-const uint16_t INLET_HREG = 3003;
-const uint16_t AP_HREG = 3004;
+const uint16_t AP_HREG = 3003;
+const uint16_t INLET_HREG = 3004;
 const uint16_t HEAT_HREG = 3005;
 
-int16_t  heat_from_Hreg = 0;
-int16_t  heat_from_enc  = 0;
+//int16_t  heat_from_Hreg = 0;
+
 //Coil Pins
 const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
 
@@ -58,10 +55,8 @@ ModbusIP mb;
 
 
 //functions declear for PlatfromIO rules
-//void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) ;
+String processor(const String &var); // webpage function
 void handlePortal();//处理设置网页处理模块
-//void task_get_data_1300();//获取锅炉串口信息。
-//void task_get_data_2400();
 void task_get_data();
 void Task_send_modbus();
 
@@ -96,7 +91,7 @@ void task_get_data(){
     delay(200);
     Serial.write("READ\n");
     Serial.flush();
-    delay(500);
+    delay(400);
 
     if(Serial.available()>0){
         MsgString_1300 = Serial.readStringUntil('C');
@@ -110,9 +105,6 @@ void task_get_data(){
             MSG_token1300[i]=tokens1300.nextToken(); // prints the next token in the string
             i++;
         }
-
-            //To_artisan.BT = MSG_token1300[1].toDouble();
-            //To_artisan.ET = MSG_token1300[2].toDouble();
             mb.Hreg(BT_HREG,int(MSG_token1300[1].toDouble() *100));
             mb.Hreg(ET_HREG,int(MSG_token1300[2].toDouble() *100));
 
@@ -130,7 +122,7 @@ void task_get_data(){
     delay(200);
     Serial.write("READ\n");
     Serial.flush();
-    delay(500);
+    delay(400);
 
     if(Serial.available()>0){
         MsgString_2400 = Serial.readStringUntil('C');
@@ -145,29 +137,20 @@ void task_get_data(){
             i++;
         }
 
-            To_artisan.AP = MSG_token2400[1].toDouble();
-            To_artisan.inlet = MSG_token2400[2].toDouble();
-            mb.Hreg(INLET_HREG,int(To_artisan.AP *100));
-
+            //To_artisan.inlet = MSG_token2400[1].toDouble();
+            //To_artisan.AP = MSG_token2400[2].toDouble();
+            mb.Hreg(AP_HREG,int(MSG_token2400[1].toDouble() *100));
+            mb.Hreg(INLET_HREG,int(MSG_token2400[2].toDouble() *100));
 
             MsgString_2400 = "";    
             i=0;    
      while (Serial.read() >=0 ) {}//clean buffeR
        cmd_chan1300 = true ;
-
     }
-
-}
-
-void Task_send_modbus(){
-    mb.Hreg(BT_HREG,int(To_artisan.BT *100));
-    mb.Hreg(ET_HREG,int(To_artisan.ET *100));
-    mb.Hreg(INLET_HREG,int(To_artisan.AP *100));
 }
 
 
-
-TickTwo ticker_task_2s_get_date(task_get_data, 2000, 0, MILLIS); 
+TickTwo ticker_task_1s_get_date(task_get_data, 1000, 0, MILLIS); 
 
 
 void handlePortal() {
@@ -191,9 +174,6 @@ void handlePortal() {
 
 
 void setup() {
-
-//init env_data 初始化环境参数
-//uint8_t AHT_status;
 
 pinMode(HEAT_OUT_PIN, OUTPUT); 
 
@@ -234,13 +214,9 @@ analogWriteFreq(PWM_FREQ);
   server.on("/",  handlePortal);
   server.begin();
 
-  //webSocket.begin();
-    // event handler
-  //webSocket.onEvent(webSocketEvent);
 
+ ticker_task_1s_get_date.start();
 
- ticker_task_2s_get_date.start();
- ticker_task_200ms_send_modbus.start();
 //Init Modbus-TCP 
 
     Serial.printf("\nStart Modbus-TCP   service...\n");
@@ -251,11 +227,13 @@ analogWriteFreq(PWM_FREQ);
     mb.addHreg(BT_HREG);
     mb.addHreg(ET_HREG);
     mb.addHreg(INLET_HREG);
+    mb.addHreg(AP_HREG);
     mb.addHreg(HEAT_HREG);
 
     mb.Hreg(BT_HREG,0); //初始化赋值
     mb.Hreg(ET_HREG,0);  //初始化赋值
     mb.Hreg(INLET_HREG,0); //初始化赋值
+    mb.Hreg(AP_HREG,0); //初始化赋值   
     mb.Hreg(HEAT_HREG,0);  //初始化赋值
 
 }
@@ -263,17 +241,13 @@ analogWriteFreq(PWM_FREQ);
 void loop() {
     //webSocket.loop();  //处理websocketmie
     server.handleClient();//处理网页
-    ticker_task_2s_get_date.update();//task_get_data 获取数据
-    ticker_task_200ms_send_modbus.update();//task_send_modbus 
+    ticker_task_1s_get_date.update();//task_get_data 获取数据
+    mb.task();//处理modbus数据
+//heat_from_Hreg =  mb.Hreg(HEAT_HREG);//从寄存器读取火力数据
 
+ //delay(100);
 
- heat_from_enc = encoder.readAndReset(); //读取新的encoder变化量
-
-   
- To_artisan.heat_level =  mb.Hreg(HEAT_HREG);//从寄存器读取火力数据
- delay(50);
-
-
+/*
        //HEAT 控制部分 
        if ((To_artisan.heat_level + heat_from_enc) <= 0 && To_artisan.heat_level >=0 ) { //如果输入小于0值，自动限制在0
             
@@ -304,13 +278,8 @@ void loop() {
             heat_from_enc=0;
 
            }
-    analogWrite(HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,250,1000)); //将火力数据输出到PWM
 
-      // (HEAT_OUT_PIN, map(To_artisan.heat_level,0,100,0,1024), user_wifi.PWM_FREQ_HEAT, resolution); //自动模式下，将heat数值转换后输出到pwm
- 
-  //Serial.printf("heat_from_Artisan: %d\n", heat_from_Artisan);
- // Serial.printf("To_artisan.heat_level: %d\n", To_artisan.heat_level);
+*/   
+    analogWrite(HEAT_OUT_PIN, map(mb.Hreg(HEAT_HREG) ,0,100,250,1000)); //将火力数据输出到PW
 
-
-     mb.task();//处理modbus数据
 }
