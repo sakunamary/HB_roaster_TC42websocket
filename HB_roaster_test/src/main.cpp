@@ -44,6 +44,7 @@ data_to_artisan_t To_artisan = {0.0,0.0,0.0,0.0,0};
 const uint16_t BT_HREG = 3001;
 const uint16_t ET_HREG = 3002;
 const uint16_t INLET_HREG = 3003;
+const uint16_t AP_HREG = 3004;
 const uint16_t HEAT_HREG = 3005;
 
 int16_t  heat_from_Hreg = 0;
