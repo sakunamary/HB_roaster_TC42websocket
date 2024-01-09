@@ -16,11 +16,10 @@
 #include "ArduinoJson.h"
 
 #include <pwmWrite.h>
-//#include <ESP32Encoder.h>
-#include "AiEsp32RotaryEncoder.h"
-#include "AiEsp32RotaryEncoderNumberSelector.h"
+#include <ESP32Encoder.h>
 
-//#include "esp_task_wdt.h"
+
+#include "esp_task_wdt.h"
 
 #include <ModbusIP_ESP8266.h>
 
@@ -39,8 +38,8 @@ int cmd_chan1300 = 0;
 String MsgString_1300="";
 int heat_level_to_artisan = 0;
 
-//int16_t  heat_from_Hreg = 0;
-//int16_t  heat_from_enc  = 0;
+int16_t  heat_from_Hreg = 0;
+int16_t  heat_from_enc  = 0;
 
 //data_to_artisan_t To_artisan = {0.0,0.0,0.0,0.0,0};
 
@@ -63,7 +62,7 @@ const uint16_t HEAT_HREG = 3005;
 const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
 
 
-//static IRAM_ATTR void enc_cb(void* arg);
+static IRAM_ATTR void enc_cb(void* arg);
 void task_send_Hreg(void *pvParameters);
 void task_get_data(void *pvParameters);
 
@@ -76,19 +75,12 @@ ModbusIP mb;
 //pwm object 
 Pwm pwm = Pwm();
 
-// rotary encoder object
-AiEsp32RotaryEncoder *rotaryEncoder = new AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, -1, ROTARY_ENCODER_STEPS);
-AiEsp32RotaryEncoderNumberSelector numberSelector = AiEsp32RotaryEncoderNumberSelector();
 
-/*
 ESP32Encoder encoder(true);
 static IRAM_ATTR void enc_cb(void* arg) {
   ESP32Encoder* enc = (ESP32Encoder*) arg;
-}*/
-void IRAM_ATTR readEncoderISR()
-{
-    rotaryEncoder->readEncoder_ISR();
 }
+
 
 
 void task_get_data(void *pvParameters)
@@ -108,40 +100,6 @@ void task_get_data(void *pvParameters)
         // Wait for the next cycle (intervel 1s).
          vTaskDelayUntil(&xLastWakeTime, xIntervel);
 
-        if (cmd_chan1300 < 5  ) {
-
-            if(Serial.available()){
-                MsgString_1300 = Serial.readStringUntil('C');
-                Serial.printf("\nSerial input:%s\n",MsgString_1300);
-                MsgString_1300.concat('C');
-
-            } 
-
-            while (Serial.read() >=0 ) {}//clean buffer
-            StringTokenizer tokens1300(MsgString_1300, ",");
-
-            while(tokens1300.hasNext()){
-                    MSG_token1300[i]=tokens1300.nextToken(); // prints the next token in the string
-                    i++;
-                }
-            if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) 
-                {
-                    //To_artisan.BT = MSG_token1300[1].toDouble();
-                    //To_artisan.ET = MSG_token1300[2].toDouble();
-                    //mb.Hreg(BT_HREG,int(To_artisan.BT *100)); //3001
-                    //mb.Hreg(ET_HREG,int(To_artisan.ET *100)); //3002
-
-                    mb.Hreg(BT_HREG,int(MSG_token1300[1].toDouble() *100)); //3001
-                    mb.Hreg(ET_HREG,int(MSG_token1300[2].toDouble() *100)); //3002
-
-                    xSemaphoreGive(xGetDataMutex);  //end of lock mutex
-                } //释放mutex
-            MsgString_1300 = "";    
-            i=0;    
-            Serial.flush();
-            cmd_chan1300++ ;
-        }  else 
-        {   
         Serial.print("CHAN;1300\n");
         Serial.flush();
         vTaskDelay(100);
@@ -178,10 +136,7 @@ void task_get_data(void *pvParameters)
             i=0;    
             Serial.flush();
             while (Serial.read() >=0 ) {}//clean buffer
-            cmd_chan1300 = 0 ;
-
         }
-    }
 }//function 
 
 
@@ -194,7 +149,6 @@ void setup() {
 
     Serial.begin(BAUDRATE);
 #if defined(DEBUG_MODE)
-    //Serial.begin(BAUDRATE);
     Serial.printf("\nHB_WIFI  STARTING...\n");
 #endif
 
@@ -261,20 +215,12 @@ Serial.printf("\nStart Task...\n");
 #endif
 //init ENCODER
 	// Enable the weak pull up resistors
-
-    rotaryEncoder->begin();
-    rotaryEncoder->setup(readEncoderISR);
-    numberSelector.attachEncoder(rotaryEncoder);
-    numberSelector.setRange(0, 100, 1, false, 1);
-    numberSelector.setValue(0);
-/*
     ESP32Encoder::useInternalWeakPullResistors=UP;
-
     encoder.attachSingleEdge(ENC_DT, ENC_CLK);
     encoder.clearCount();
     encoder.setFilter(1023);
     esp_task_wdt_add(loopTaskHandle); //add watchdog for encoder
-*/
+
 #if defined(DEBUG_MODE)    
     Serial.println("Encoder started"); 
 #endif
@@ -301,26 +247,16 @@ Serial.printf("\nStart Task...\n");
 
 void loop() {
 
- //const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+ const TickType_t xIntervel = 500/ portTICK_PERIOD_MS;
 //更新寄存器数据
   mb.task();
 // pwm output level 
 //    PC                                        MCU-value                   ENCODER read
 //Artisan-> heat_from_Artisan        >>    To_artisan.heat_level     <<     heat_from_enc
 //  heat_from_Artisan == heat_from_enc  in loop（） 
-    heat_level_to_artisan  =  mb.Hreg(HEAT_HREG);//读取当前寄存器数据 
-    numberSelector.setValue(heat_level_to_artisan);//同步寄存器数据到编码器中
 
-    if (rotaryEncoder->encoderChanged())
-    {
-        //heat_from_enc = encoder.getCount();
-       heat_level_to_artisan = numberSelector.getValue(); //获取变动后的编码器数值并更新到heat_level_to_artisan
-        mb.Hreg(HEAT_HREG, heat_level_to_artisan); //同步到最新的寄存器中
+    heat_from_enc = encoder.getCount();
 
-    }
-
-
-/*
 if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {  
         heat_level_to_artisan  =  mb.Hreg(HEAT_HREG);//读取数据
 
@@ -354,7 +290,7 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
            }
        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
 }
-*/
+
        pwm.write(HEAT_OUT_PIN, map(heat_level_to_artisan ,0,100,250,1000), PWM_FREQ, resolution); //自动模式下，将heat数值转换后输出到pwm
 
 
