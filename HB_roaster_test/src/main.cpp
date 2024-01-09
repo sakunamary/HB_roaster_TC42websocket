@@ -39,8 +39,8 @@ int cmd_chan1300 = 0;
 String MsgString_1300="";
 int heat_level_to_artisan = 0;
 
-int16_t  heat_from_Hreg = 0;
-int16_t  heat_from_enc  = 0;
+//int16_t  heat_from_Hreg = 0;
+//int16_t  heat_from_enc  = 0;
 
 //data_to_artisan_t To_artisan = {0.0,0.0,0.0,0.0,0};
 
