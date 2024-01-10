@@ -23,22 +23,4 @@
 #define PWM_RESOLUTION 10 //0-1024
 
 
-//定义artisan 交互的数组
-
-/*
-typedef struct  data_to_artisan {
-    double BT;
-    double ET;
-    double  AP;
-    double inlet;
-    int heat_level;
-    //AT = float(res1300[0])
-    //ET = float(res1300[1])
-    //BT = float(res1300[2])
-    //Inlet =float(res2400[1])
-    
- } data_to_artisan_t ;
- extern data_to_artisan_t To_artisan;
-//end of 定义artisan 交互的数组
-*/
 #endif

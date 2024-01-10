@@ -33,13 +33,13 @@ String MsgString;
 
 String MSG_token1300[4];
 
-int cmd_chan1300 = 0;
 
 String MsgString_1300="";
-int heat_level_to_artisan = 0;
 
-int16_t  heat_from_Hreg = 0;
+int heat_level_to_artisan = 0;
 int16_t  heat_from_enc  = 0;
+int16_t  last_BT  = -27300;
+int16_t  last_ET  = -27300;
 
 //data_to_artisan_t To_artisan = {0.0,0.0,0.0,0.0,0};
 
@@ -109,7 +109,6 @@ void task_get_data(void *pvParameters)
 
             if(Serial.available()){
                 MsgString_1300 = Serial.readStringUntil('C');
-                Serial.printf("\nSerial input:%s\n",MsgString_1300);
                 MsgString_1300.concat('C');
 
             } 
@@ -124,12 +123,32 @@ void task_get_data(void *pvParameters)
                     if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) 
                         {
 
-                        mb.Hreg(BT_HREG,int(MSG_token1300[1].toDouble() *100)); //3001
-                        mb.Hreg(ET_HREG,int(MSG_token1300[2].toDouble() *100)); //3002
-                           // To_artisan.BT = MSG_token1300[1].toDouble();
-                           // To_artisan.ET = MSG_token1300[2].toDouble();
-                           // mb.Hreg(BT_HREG,int(To_artisan.BT *100));
-                           // mb.Hreg(ET_HREG,int(To_artisan.ET *100));
+
+                         if (last_BT == -27300 && last_ET == -27300) { // 第一次记录，不作数据校验，直接赋值输出
+                                last_BT = int(MSG_token1300[1].toDouble() *100) ;//保留上一次的值 BT 
+                                last_ET = int(MSG_token1300[2].toDouble() *100) ;//保留上一次的值 ET
+                                mb.Hreg(BT_HREG,last_BT); //3001
+                                mb.Hreg(ET_HREG,last_ET); //3002
+                         }  else
+                          {
+                                if  (((last_BT - int(MSG_token1300[1].toDouble() *100)) > 2*100 )  || //下降区间 ror =-120c/min 
+                                 ((int(MSG_token1300[1].toDouble() *100) - last_BT ) > 0.6*100 ) ) {//ror =45c/min 如果要调整就修改此处的波动率 //上升区间
+
+                                mb.Hreg(BT_HREG,last_BT); //3001 //超过波动率就 取旧值 
+                                } else { 
+                                mb.Hreg(BT_HREG,int(MSG_token1300[1].toDouble() *100)); //3001 //没超过波动率
+                                last_BT = int(MSG_token1300[1].toDouble() *100) ;//保留上一次的值 BT 
+                                }
+                                
+                                if  (((last_ET - int(MSG_token1300[2].toDouble() *100)) > 2*100 )  || //下降区间 ror =-120c/min 
+                                ((int(MSG_token1300[2].toDouble() *100)) - last_ET > 0.6*100 ) ){//ror =45c/min 如果要调整就修改此处的波动率 
+                                mb.Hreg(BT_HREG,last_ET); //3001 //超过波动率就 取旧值 
+                                } else {
+                                mb.Hreg(BT_HREG,int(MSG_token1300[2].toDouble() *100)); //3002 //没超过波动率
+                                last_ET = int(MSG_token1300[2].toDouble() *100) ;//保留上一次的值 ET 
+                                }
+                         }        
+
                         xSemaphoreGive(xGetDataMutex);  //end of lock mutex
                     } //释放mutex
             MsgString_1300 = "";    
@@ -178,21 +197,7 @@ Serial.printf("\nStart Task...\n");
 
     Serial.printf("\nTASK1:get_data...\n");
 
-/*
- xTaskCreatePinnedToCore(
-        task_send_Hreg, "send_Hreg" // 获取HB数据
-        ,
-        2048 // This stack size can be checked & adjusted by reading the Stack Highwater
-        ,
-        NULL, 1 // Priority, with 1 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-        ,
-        NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
-    );
 
-#if defined(DEBUG_MODE)
-    Serial.printf("\nTASK2:get_dsend_Hregata...\n");
-#endif
-*/
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Hi! This is a sample response.");
   });
