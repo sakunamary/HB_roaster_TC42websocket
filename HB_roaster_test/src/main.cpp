@@ -122,17 +122,15 @@ void task_get_data(void *pvParameters)
                 }
                     if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) 
                         {
-
-
-                         if (last_BT == -27300 && last_ET == -27300) { // 第一次记录，不作数据校验，直接赋值输出
+                         if ((last_BT == -27300 && last_ET == -27300) ||(last_BT==0 && last_ET ==0)) { // 第一次记录，不作数据校验，直接赋值输出
                                 last_BT = int(MSG_token1300[1].toDouble() *100) ;//保留上一次的值 BT 
                                 last_ET = int(MSG_token1300[2].toDouble() *100) ;//保留上一次的值 ET
-                                mb.Hreg(BT_HREG,last_BT); //3001
-                                mb.Hreg(ET_HREG,last_ET); //3002
+                                mb.Hreg(BT_HREG,int(MSG_token1300[1].toDouble() *100)); //3001
+                                mb.Hreg(ET_HREG,int(MSG_token1300[2].toDouble() *100)); //3002
                          }  else
                           {
-                                if  (((last_BT - int(MSG_token1300[1].toDouble() *100)) > 2*100 )  || //下降区间 ror =-120c/min 
-                                 ((int(MSG_token1300[1].toDouble() *100) - last_BT ) > 0.6*100 ) ) {//ror =45c/min 如果要调整就修改此处的波动率 //上升区间
+                                if  (((last_BT - int(MSG_token1300[1].toDouble() *100)) > 20*100 )  || //下降区间 ror =-120c/min 
+                                 ((int(MSG_token1300[1].toDouble() *100) - last_BT ) > 5*100 ) ) {//ror =45c/min 如果要调整就修改此处的波动率 //上升区间
 
                                 mb.Hreg(BT_HREG,last_BT); //3001 //超过波动率就 取旧值 
                                 } else { 
@@ -140,11 +138,12 @@ void task_get_data(void *pvParameters)
                                 last_BT = int(MSG_token1300[1].toDouble() *100) ;//保留上一次的值 BT 
                                 }
                                 
-                                if  (((last_ET - int(MSG_token1300[2].toDouble() *100)) > 2*100 )  || //下降区间 ror =-120c/min 
-                                ((int(MSG_token1300[2].toDouble() *100)) - last_ET > 0.6*100 ) ){//ror =45c/min 如果要调整就修改此处的波动率 
-                                mb.Hreg(BT_HREG,last_ET); //3001 //超过波动率就 取旧值 
+                                if  (((last_ET - int(MSG_token1300[2].toDouble() *100)) > 5*100 )  || //下降区间 ror =-120c/min 
+                                ((int(MSG_token1300[2].toDouble() *100)) - last_ET > 1*100 ) ){//ror =45c/min 如果要调整就修改此处的波动率 
+                                mb.Hreg(ET_HREG,last_ET); //3002 //超过波动率就 取旧值 
                                 } else {
-                                mb.Hreg(BT_HREG,int(MSG_token1300[2].toDouble() *100)); //3002 //没超过波动率
+
+                                mb.Hreg(ET_HREG,int(MSG_token1300[2].toDouble() *100)); //3002 //没超过波动率
                                 last_ET = int(MSG_token1300[2].toDouble() *100) ;//保留上一次的值 ET 
                                 }
                          }        
