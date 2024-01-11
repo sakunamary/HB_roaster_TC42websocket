@@ -175,7 +175,7 @@ void setup() {
     WiFi.macAddress(macAddr); 
     // Serial_debug.println("WiFi.mode(AP):");
     WiFi.mode(WIFI_AP);
-    sprintf( ap_name ,"HB_WIFI_%02X%02X%02X",macAddr[0],macAddr[1],macAddr[2]);
+    sprintf( ap_name ,"HB_WIFI_%02X%02X%02X",macAddr[3],macAddr[4],macAddr[5]);
     WiFi.softAP(ap_name, "12345678"); // defualt IP address :192.168.4.1 password min 8 digis
 
 #if defined(DEBUG_MODE)
