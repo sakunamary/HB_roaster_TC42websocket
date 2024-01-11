@@ -251,7 +251,7 @@ Serial.printf("\nStart Task...\n");
 
 void loop() {
 
- const TickType_t xIntervel = 500/ portTICK_PERIOD_MS;
+ const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
 //更新寄存器数据
   mb.task();
 // pwm output level 
