@@ -129,8 +129,9 @@ void task_get_data(void *pvParameters)
                                 mb.Hreg(ET_HREG,int(MSG_token1300[2].toDouble() *100)); //3002
                          }  else
                           {
-                                if  (((last_BT - int(MSG_token1300[1].toDouble() *100)) > 20*100  )|| //下降区间 ror =-120c/min 
-                                 (((int(MSG_token1300[1].toDouble() *100) - last_BT ) > 5*100 ) && ((int(MSG_token1300[1].toDouble() *100) - last_BT ) < 10*100 ) )) {//ror =45c/min 如果要调整就修改此处的波动率 //上升区间
+                                if  (((last_BT - int(MSG_token1300[1].toDouble() *100)) > 20*100  )|| //下降区间 ror =-20c/s 如果要调整就修改此处的波动率 
+                                 (((int(MSG_token1300[1].toDouble() *100) - last_BT ) > 5*100 ) 
+                                 && ((int(MSG_token1300[1].toDouble() *100) - last_BT ) < 10*100 ) )) {//上升区间 ror =5-10c/s 上升温度就检测超过次幅度就普通采样，修正bug
 
                                 mb.Hreg(BT_HREG,last_BT); //3001 //超过波动率就 取旧值 
                                 } else { 
@@ -138,9 +139,9 @@ void task_get_data(void *pvParameters)
                                 last_BT = int(MSG_token1300[1].toDouble() *100) ;//保留上一次的值 BT 
                                 }
                                 
-                                if  (((last_ET - int(MSG_token1300[2].toDouble() *100)) > 5*100 )  || //下降区间 ror =-120c/min 
+                                if  (((last_ET - int(MSG_token1300[2].toDouble() *100)) > 5*100 )  || //下降区间 ror =-5c/s
                                 (((int(MSG_token1300[2].toDouble() *100)) - last_ET > 1*100 ) 
-                                && ((int(MSG_token1300[2].toDouble() *100)) - last_ET < 5*100 ))) {//ror =45c/min 如果要调整就修改此处的波动率 
+                                && ((int(MSG_token1300[2].toDouble() *100)) - last_ET < 5*100 ))) {//上升区间 ror = 1-5c/s 如果要调整就修改此处的波动率 
                                 mb.Hreg(ET_HREG,last_ET); //3002 //超过波动率就 取旧值 
                                 } else {
 
