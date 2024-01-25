@@ -90,7 +90,7 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 1000/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 1500/ portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -102,10 +102,10 @@ void task_get_data(void *pvParameters)
 
         Serial.print("CHAN;1300\n");
         Serial.flush();
-        vTaskDelay(100);
+        vTaskDelay(200);
         while (Serial.read() >=0 ) {}//clean buffer
         Serial.print("READ\n");
-        vTaskDelay(400);
+        vTaskDelay(500);
 
             if(Serial.available()){
                 MsgString_1300 = Serial.readStringUntil('C');
@@ -129,9 +129,9 @@ void task_get_data(void *pvParameters)
                                 mb.Hreg(ET_HREG,int(MSG_token1300[2].toDouble() *100)); //3002
                          }  else
                           {
-                                if  (((last_BT - int(MSG_token1300[1].toDouble() *100)) > 20*100  )|| //下降区间 ror =-20c/s 如果要调整就修改此处的波动率 
+                                if  (((last_BT - int(MSG_token1300[1].toDouble() *100)) > 60*100  )|| //下降区间 ror =-20c/s 如果要调整就修改此处的波动率 
                                  (((int(MSG_token1300[1].toDouble() *100) - last_BT ) > 5*100 ) 
-                                 && ((int(MSG_token1300[1].toDouble() *100) - last_BT ) < 10*100 ) )) {//上升区间 ror =5-10c/s 上升温度就检测超过次幅度就普通采样，修正bug
+                                 && ((int(MSG_token1300[1].toDouble() *100) - last_BT ) < 25*100 ) )) {//上升区间 ror =5-10c/s 上升温度就检测超过次幅度就普通采样，修正bug
 
                                 mb.Hreg(BT_HREG,last_BT); //3001 //超过波动率就 取旧值 
                                 } else { 
@@ -139,9 +139,9 @@ void task_get_data(void *pvParameters)
                                 last_BT = int(MSG_token1300[1].toDouble() *100) ;//保留上一次的值 BT 
                                 }
                                 
-                                if  (((last_ET - int(MSG_token1300[2].toDouble() *100)) > 5*100 )  || //下降区间 ror =-5c/s
-                                (((int(MSG_token1300[2].toDouble() *100)) - last_ET > 1*100 ) 
-                                && ((int(MSG_token1300[2].toDouble() *100)) - last_ET < 5*100 ))) {//上升区间 ror = 1-5c/s 如果要调整就修改此处的波动率 
+                                if  (((last_ET - int(MSG_token1300[2].toDouble() *100)) > 30*100 )  || //下降区间 ror =-5c/s
+                                (((int(MSG_token1300[2].toDouble() *100)) - last_ET > 5*100 ) 
+                                && ((int(MSG_token1300[2].toDouble() *100)) - last_ET < 15*100 ))) {//上升区间 ror = 1-5c/s 如果要调整就修改此处的波动率 
                                 mb.Hreg(ET_HREG,last_ET); //3002 //超过波动率就 取旧值 
                                 } else {
 
