@@ -104,7 +104,7 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 1500/ portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 3000/ portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -116,10 +116,10 @@ void task_get_data(void *pvParameters)
 
         Serial.print("CHAN;1300\n");
         Serial.flush();
-        vTaskDelay(200);
+        vTaskDelay(500);
         while (Serial.read() >=0 ) {}//clean buffer
         Serial.print("READ\n");
-        vTaskDelay(500);
+        vTaskDelay(600);
 
             if(Serial.available()){
                 MsgString_1300 = Serial.readStringUntil('C');
@@ -215,9 +215,9 @@ Serial.printf("\nStart Task...\n");
         ,
         NULL,  1 // Running Core decided by FreeRTOS,let core0 run wifi and BT
     );
-
+#if defined(DEBUG_MODE)
     Serial.printf("\nTASK1:get_data...\n");
-
+#endif
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Hi! This is a sample response.");
@@ -235,8 +235,9 @@ Serial.printf("\nStart Task...\n");
     pwm.pause();
     pwm.write(PWM_HEAT,0, PWM_FREQ, PWM_RESOLUTION);
     pwm.resume();
+    #if defined(DEBUG_MODE)
     pwm.printDebug();
-#if defined(DEBUG_MODE)
+
     Serial.println("PWM started");  
    
     Serial.printf("\nStart INPUT ENCODER  service...\n");
