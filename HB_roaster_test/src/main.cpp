@@ -1,13 +1,10 @@
 #include <Arduino.h>
 #include "config.h"
 
-
-
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <AsyncElegantOTA.h>
-
 
 
 #include <StringTokenizer.h>
@@ -22,6 +19,8 @@
 #include "esp_task_wdt.h"
 
 #include <ModbusIP_ESP8266.h>
+
+#include "OneButton.h"
 
 SemaphoreHandle_t xGetDataMutex = NULL;
 
@@ -51,6 +50,7 @@ const byte resolution = PWM_RESOLUTION; //pwm -0-4096
 
 AsyncWebServer server(80);
 
+OneButton button(ENC_BUTTON, true);
 //Modbus Registers Offsets
 const uint16_t BT_HREG = 3001;
 const uint16_t ET_HREG = 3002;
@@ -65,6 +65,20 @@ const int HEAT_OUT_PIN = PWM_HEAT; //GPIO26
 static IRAM_ATTR void enc_cb(void* arg);
 void task_send_Hreg(void *pvParameters);
 void task_get_data(void *pvParameters);
+
+
+void IRAM_ATTR checkTicks() {
+  // include all buttons here to be checked
+  button.tick(); // just call tick() to check the state.
+}
+
+// this function will be called when the button was released after a long hold.
+void pressStop() {
+//   Serial.print("pressStop(");
+//   Serial.print(millis() - pressStartTime);
+//   Serial.println(") detected.");
+  ESP.restart();
+} // pressStop()
 
 
 
@@ -172,6 +186,12 @@ void setup() {
     Serial.printf("\nHB_WIFI  STARTING...\n");
 #endif
 
+  // setup interrupt routine
+  // when not registering to the interrupt the sketch also works when the tick is called frequently.
+  attachInterrupt(digitalPinToInterrupt(ENC_BUTTON), checkTicks, CHANGE);
+  button.setPressMs(3000); // that is the time when LongPressStart is called
+  button.attachLongPressStop(pressStop);
+
   //初始化网络服务
 
     WiFi.macAddress(macAddr); 
@@ -209,6 +229,8 @@ Serial.printf("\nStart Task...\n");
 #if defined(DEBUG_MODE)
     Serial.println("HTTP server started");
 #endif
+
+
   //Init pwm output
     pwm.pause();
     pwm.write(PWM_HEAT,0, PWM_FREQ, PWM_RESOLUTION);
@@ -297,7 +319,7 @@ if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS) {
        xSemaphoreGive(xGetDataMutex);  //end of lock mutex
 }
 
-       pwm.write(HEAT_OUT_PIN, map(heat_level_to_artisan ,0,100,250,1000), PWM_FREQ, resolution); //自动模式下，将heat数值转换后输出到pwm
+       pwm.write(HEAT_OUT_PIN, map(heat_level_to_artisan ,0,100,230,850), PWM_FREQ, resolution); //自动模式下，将heat数值转换后输出到pwm
 
-
+  button.tick();
 }

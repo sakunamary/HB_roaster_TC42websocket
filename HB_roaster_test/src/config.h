@@ -13,6 +13,7 @@
 //#define DEBUG_MODE 
 
 //pinout setting
+#define ENC_BUTTON 35
 #define ENC_CLK  33
 #define ENC_DT   32
 #define PWM_HEAT 26
