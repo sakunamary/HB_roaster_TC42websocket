@@ -323,7 +323,7 @@ void loop()
     }
     // M2s 使用参数 map(heat_level_to_artisan ,0,100,230,850) - MGR的40A SSR
     // M6s 使用参数 map(heat_level_to_artisan ,0,100,250,1000) -0-10V SSR
-    pwm.write(HEAT_OUT_PIN, map(heat_level_to_artisan, 0, 100, 250, 1000), PWM_FREQ, resolution); // 自动模式下，将heat数值转换后输出到pwm
+    pwm.write(HEAT_OUT_PIN, map(heat_level_to_artisan, 0, 100, 230,850), PWM_FREQ, resolution); // 自动模式下，将heat数值转换后输出到pwm
 
     // check RST mode
     if (mb.Hreg(RST_HREG) != 0)
