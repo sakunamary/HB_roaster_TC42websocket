@@ -28,6 +28,7 @@ String local_IP;
 String MsgString;
 
 String MSG_token1300[4];
+bool cmd_1300 = true;
 
 String MsgString_1300 = "";
 
@@ -35,8 +36,8 @@ int heat_level_to_artisan = 0;
 int16_t heat_from_enc = 0;
 int16_t last_BT = -27300;
 int16_t last_ET = -27300;
-
-// data_to_artisan_t To_artisan = {0.0,0.0,0.0,0.0,0};
+int16_t last_inlet = -27300;
+int16_t last_ap = -27300;
 
 extern bool loopTaskWDTEnabled;
 extern TaskHandle_t loopTaskHandle;
@@ -50,8 +51,8 @@ OneButton button(ENC_BUTTON, true);
 // Modbus Registers Offsets
 const uint16_t BT_HREG = 3001;
 const uint16_t ET_HREG = 3002;
-// const uint16_t AP_HREG = 3003;
-// const uint16_t INLET_HREG = 3004;
+const uint16_t AP_HREG = 3003;
+const uint16_t INLET_HREG = 3004;
 const uint16_t HEAT_HREG = 3005;
 const uint16_t RST_HREG = 3006;
 
@@ -93,7 +94,7 @@ void task_get_data(void *pvParameters)
     (void)pvParameters;
     TickType_t xLastWakeTime;
 
-    const TickType_t xIntervel = 3000 / portTICK_PERIOD_MS;
+    const TickType_t xIntervel = 1500 / portTICK_PERIOD_MS;
     /* Task Setup and Initialize */
     // Initial the xLastWakeTime variable with the current time.
     xLastWakeTime = xTaskGetTickCount();
@@ -102,76 +103,152 @@ void task_get_data(void *pvParameters)
     {        // for loop
              //  Wait for the next cycle (intervel 1s).
         vTaskDelayUntil(&xLastWakeTime, xIntervel);
-
-        Serial.print("CHAN;1300\n");
-        Serial.flush();
-        vTaskDelay(500);
-        while (Serial.read() >= 0)
+        if (cmd_1300)
         {
-        } // clean buffer
-        Serial.print("READ\n");
-        vTaskDelay(600);
-
-        if (Serial.available())
-        {
-            MsgString_1300 = Serial.readStringUntil('C');
-            MsgString_1300.concat('C');
-        }
-
-        while (Serial.read() >= 0)
-        {
-        } // clean buffer
-        StringTokenizer tokens1300(MsgString_1300, ",");
-
-        while (tokens1300.hasNext())
-        {
-            MSG_token1300[i] = tokens1300.nextToken(); // prints the next token in the string
-            i++;
-        }
-        if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS)
-        {
-            if ((last_BT == -27300 && last_ET == -27300) || (last_BT == 0 && last_ET == 0))
-            {                                                             // 第一次记录，不作数据校验，直接赋值输出
-                last_BT = int(MSG_token1300[1].toDouble() * 100);         // 保留上一次的值 BT
-                last_ET = int(MSG_token1300[2].toDouble() * 100);         // 保留上一次的值 ET
-                mb.Hreg(BT_HREG, int(MSG_token1300[1].toDouble() * 100)); // 3001
-                mb.Hreg(ET_HREG, int(MSG_token1300[2].toDouble() * 100)); // 3002
-            }
-            else
+            Serial.print("CHAN;1300\n");
+            Serial.flush();
+            vTaskDelay(200);
+            while (Serial.read() >= 0)
             {
-                if (((last_BT - int(MSG_token1300[1].toDouble() * 100)) > 60 * 100) || // 下降区间 ror =-20c/s 如果要调整就修改此处的波动率
-                    (((int(MSG_token1300[1].toDouble() * 100) - last_BT) > 5 * 100) && ((int(MSG_token1300[1].toDouble() * 100) - last_BT) < 25 * 100)))
-                { // 上升区间 ror =5-10c/s 上升温度就检测超过次幅度就普通采样，修正bug
+            } // clean buffer
+            Serial.print("READ\n");
+            vTaskDelay(400);
 
-                    mb.Hreg(BT_HREG, last_BT); // 3001 //超过波动率就 取旧值
-                }
-                else
-                {
-                    mb.Hreg(BT_HREG, int(MSG_token1300[1].toDouble() * 100)); // 3001 //没超过波动率
-                    last_BT = int(MSG_token1300[1].toDouble() * 100);         // 保留上一次的值 BT
-                }
-
-                if (((last_ET - int(MSG_token1300[2].toDouble() * 100)) > 30 * 100) || // 下降区间 ror =-5c/s
-                    (((int(MSG_token1300[2].toDouble() * 100)) - last_ET > 5 * 100) && ((int(MSG_token1300[2].toDouble() * 100)) - last_ET < 15 * 100)))
-                {                              // 上升区间 ror = 1-5c/s 如果要调整就修改此处的波动率
-                    mb.Hreg(ET_HREG, last_ET); // 3002 //超过波动率就 取旧值
-                }
-                else
-                {
-
-                    mb.Hreg(ET_HREG, int(MSG_token1300[2].toDouble() * 100)); // 3002 //没超过波动率
-                    last_ET = int(MSG_token1300[2].toDouble() * 100);         // 保留上一次的值 ET
-                }
+            if (Serial.available())
+            {
+                MsgString_1300 = Serial.readStringUntil('C');
+                MsgString_1300.concat('C');
             }
 
-            xSemaphoreGive(xGetDataMutex); // end of lock mutex
-        }                                  // 释放mutex
-        MsgString_1300 = "";
-        i = 0;
-        Serial.flush();
-        while (Serial.read() >= 0)
+            while (Serial.read() >= 0)
+            {
+            } // clean buffer
+            StringTokenizer tokens1300(MsgString_1300, ",");
+
+            while (tokens1300.hasNext())
+            {
+                MSG_token1300[i] = tokens1300.nextToken(); // prints the next token in the string
+                i++;
+            }
+            if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS)
+            {
+                if ((last_BT == -27300 && last_ET == -27300) || (last_BT == 0 && last_ET == 0))
+                {                                                             // 第一次记录，不作数据校验，直接赋值输出
+                    last_BT = int(MSG_token1300[1].toDouble() * 100);         // 保留上一次的值 BT
+                    last_ET = int(MSG_token1300[2].toDouble() * 100);         // 保留上一次的值 ET
+                    mb.Hreg(BT_HREG, int(MSG_token1300[1].toDouble() * 100)); // 3001
+                    mb.Hreg(ET_HREG, int(MSG_token1300[2].toDouble() * 100)); // 3002
+                }
+                else
+                {
+                    if (((last_BT - int(MSG_token1300[1].toDouble() * 100)) > 60 * 100) || // 下降区间 ror =-20c/s 如果要调整就修改此处的波动率
+                        (((int(MSG_token1300[1].toDouble() * 100) - last_BT) > 5 * 100) && ((int(MSG_token1300[1].toDouble() * 100) - last_BT) < 25 * 100)))
+                    { // 上升区间 ror =5-10c/s 上升温度就检测超过次幅度就普通采样，修正bug
+
+                        mb.Hreg(BT_HREG, last_BT); // 3001 //超过波动率就 取旧值
+                    }
+                    else
+                    {
+                        mb.Hreg(BT_HREG, int(MSG_token1300[1].toDouble() * 100)); // 3001 //没超过波动率
+                        last_BT = int(MSG_token1300[1].toDouble() * 100);         // 保留上一次的值 BT
+                    }
+
+                    if (((last_ET - int(MSG_token1300[2].toDouble() * 100)) > 30 * 100) || // 下降区间 ror =-5c/s
+                        (((int(MSG_token1300[2].toDouble() * 100)) - last_ET > 5 * 100) && ((int(MSG_token1300[2].toDouble() * 100)) - last_ET < 15 * 100)))
+                    {                              // 上升区间 ror = 1-5c/s 如果要调整就修改此处的波动率
+                        mb.Hreg(ET_HREG, last_ET); // 3002 //超过波动率就 取旧值
+                    }
+                    else
+                    {
+
+                        mb.Hreg(ET_HREG, int(MSG_token1300[2].toDouble() * 100)); // 3002 //没超过波动率
+                        last_ET = int(MSG_token1300[2].toDouble() * 100);         // 保留上一次的值 ET
+                    }
+                }
+
+                xSemaphoreGive(xGetDataMutex); // end of lock mutex
+            }                                  // 释放mutex
+            MsgString_1300 = "";
+            i = 0;
+            cmd_1300 = false;
+            Serial.flush();
+            while (Serial.read() >= 0)
+            {
+            } // clean buffer
+        }
+        else
         {
-        } // clean buffer
+            Serial.print("CHAN;2400\n");
+            Serial.flush();
+            vTaskDelay(200);
+            while (Serial.read() >= 0)
+            {
+            } // clean buffer
+            Serial.print("READ\n");
+            vTaskDelay(400);
+
+            if (Serial.available())
+            {
+                MsgString_1300 = Serial.readStringUntil('C');
+                MsgString_1300.concat('C');
+            }
+
+            while (Serial.read() >= 0)
+            {
+            } // clean buffer
+            StringTokenizer tokens1300(MsgString_1300, ",");
+
+            while (tokens1300.hasNext())
+            {
+                MSG_token1300[i] = tokens1300.nextToken(); // prints the next token in the string
+                i++;
+            }
+            if (xSemaphoreTake(xGetDataMutex, xIntervel) == pdPASS)
+            {
+                if ((last_ap == -27300 && last_inlet == -27300) || (last_ap == 0 && last_inlet == 0))
+                {                                                                // 第一次记录，不作数据校验，直接赋值输出
+                    last_inlet = int(MSG_token1300[1].toDouble() * 100);         // 保留上一次的值 BT
+                    last_ap = int(MSG_token1300[2].toDouble() * 100);            // 保留上一次的值 ET
+                    mb.Hreg(INLET_HREG, int(MSG_token1300[1].toDouble() * 100)); // 3001
+                    mb.Hreg(AP_HREG, int(MSG_token1300[2].toDouble() * 100));    // 3002
+                }
+                else
+                {
+                    if (((last_inlet - int(MSG_token1300[1].toDouble() * 100)) > 60 * 100) || // 下降区间 ror =-20c/s 如果要调整就修改此处的波动率
+                        (((int(MSG_token1300[1].toDouble() * 100) - last_inlet) > 5 * 100) && ((int(MSG_token1300[1].toDouble() * 100) - last_inlet) < 25 * 100)))
+                    { // 上升区间 ror =5-10c/s 上升温度就检测超过次幅度就普通采样，修正bug
+
+                        mb.Hreg(INLET_HREG, last_inlet); // 3001 //超过波动率就 取旧值
+                    }
+                    else
+                    {
+                        mb.Hreg(INLET_HREG, int(MSG_token1300[1].toDouble() * 100)); // 3001 //没超过波动率
+                        last_inlet = int(MSG_token1300[1].toDouble() * 100);         // 保留上一次的值 BT
+                    }
+
+                    if (((last_ap - int(MSG_token1300[2].toDouble() * 100)) > 30 * 100) || // 下降区间 ror =-5c/s
+                        (((int(MSG_token1300[2].toDouble() * 100)) - last_ap > 5 * 100) && ((int(MSG_token1300[2].toDouble() * 100)) - last_ap < 15 * 100)))
+                    {                              // 上升区间 ror = 1-5c/s 如果要调整就修改此处的波动率
+                        mb.Hreg(AP_HREG, last_ap); // 3002 //超过波动率就 取旧值
+                    }
+                    else
+                    {
+
+                        mb.Hreg(AP_HREG, int(MSG_token1300[2].toDouble() * 100)); // 3002 //没超过波动率
+                        last_ap = int(MSG_token1300[2].toDouble() * 100);         // 保留上一次的值 ET
+                    }
+                }
+
+                xSemaphoreGive(xGetDataMutex); // end of lock mutex
+            }                                  // 释放mutex
+            MsgString_1300 = "";
+            i = 0;
+            cmd_1300 = true;
+            Serial.flush();
+            while (Serial.read() >= 0)
+            {
+            } // clean buffer
+        }
     }
 } // function
 
@@ -262,17 +339,17 @@ void setup()
     // Add SENSOR_IREG register - Use addIreg() for analog Inputs
     mb.addHreg(BT_HREG);
     mb.addHreg(ET_HREG);
-    // mb.addHreg(INLET_HREG);
-    // mb.addHreg(AP_HREG);
+    mb.addHreg(INLET_HREG);
+    mb.addHreg(AP_HREG);
     mb.addHreg(HEAT_HREG);
     mb.addHreg(RST_HREG);
 
-    mb.Hreg(BT_HREG, 0); // 初始化赋值
-    mb.Hreg(ET_HREG, 0); // 初始化赋值
-    // mb.Hreg(INLET_HREG,0); //初始化赋值
-    // mb.Hreg(AP_HREG,0);//初始化赋值
-    mb.Hreg(HEAT_HREG, 0); // 初始化赋值
-    mb.Hreg(RST_HREG, 0);  // 初始化赋值 ，0 代表正常运行 非0 重启
+    mb.Hreg(BT_HREG, 0);    // 初始化赋值
+    mb.Hreg(ET_HREG, 0);    // 初始化赋值
+    mb.Hreg(INLET_HREG, 0); // 初始化赋值
+    mb.Hreg(AP_HREG, 0);    // 初始化赋值
+    mb.Hreg(HEAT_HREG, 0);  // 初始化赋值
+    mb.Hreg(RST_HREG, 0);   // 初始化赋值 ，0 代表正常运行 非0 重启
 }
 
 void loop()
@@ -323,7 +400,7 @@ void loop()
     }
     // M2s 使用参数 map(heat_level_to_artisan ,0,100,230,850) - MGR的40A SSR
     // M6s 使用参数 map(heat_level_to_artisan ,0,100,250,1000) -0-10V SSR
-    pwm.write(HEAT_OUT_PIN, map(heat_level_to_artisan, 0, 100, 230,850), PWM_FREQ, resolution); // 自动模式下，将heat数值转换后输出到pwm
+    pwm.write(HEAT_OUT_PIN, map(heat_level_to_artisan, 0, 100, 250, 1000), PWM_FREQ, resolution); // 自动模式下，将heat数值转换后输出到pwm
 
     // check RST mode
     if (mb.Hreg(RST_HREG) != 0)
