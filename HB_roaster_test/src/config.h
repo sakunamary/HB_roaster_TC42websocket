@@ -3,7 +3,7 @@
 #define __CONFIG_H__
 
 
-#define VERSION "1.0.7"
+#define VERSION "1.0.8"
 
 
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
@@ -13,6 +13,11 @@
 //#define DEBUG_MODE 
 
 //pinout setting
+// #define ENC_BUTTON 35
+// #define ENC_CLK  33
+// #define ENC_DT   32
+// #define PWM_HEAT 26
+
 #define ENC_BUTTON 35
 #define ENC_CLK  33
 #define ENC_DT   32

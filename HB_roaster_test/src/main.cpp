@@ -151,17 +151,17 @@ void task_get_data(void *pvParameters)
                     last_BT = int(MSG_token1300[1].toDouble() * 100);         // 保留上一次的值 BT
                 }
 
-                if (((last_ET - int(MSG_token1300[2].toDouble() * 100)) > 30 * 100) || // 下降区间 ror =-5c/s
-                    (((int(MSG_token1300[2].toDouble() * 100)) - last_ET > 5 * 100) && ((int(MSG_token1300[2].toDouble() * 100)) - last_ET < 15 * 100)))
-                {                              // 上升区间 ror = 1-5c/s 如果要调整就修改此处的波动率
-                    mb.Hreg(ET_HREG, last_ET); // 3002 //超过波动率就 取旧值
-                }
-                else
-                {
+                // if (((last_ET - int(MSG_token1300[2].toDouble() * 100)) > 30 * 100) || // 下降区间 ror =-5c/s
+                //     (((int(MSG_token1300[2].toDouble() * 100)) - last_ET > 5 * 100) && ((int(MSG_token1300[2].toDouble() * 100)) - last_ET < 15 * 100)))
+                // {                              // 上升区间 ror = 1-5c/s 如果要调整就修改此处的波动率
+                //     mb.Hreg(ET_HREG, last_ET); // 3002 //超过波动率就 取旧值
+                // }
+                // else
+                // {
 
                     mb.Hreg(ET_HREG, int(MSG_token1300[2].toDouble() * 100)); // 3002 //没超过波动率
                     last_ET = int(MSG_token1300[2].toDouble() * 100);         // 保留上一次的值 ET
-                }
+                // }
             }
 
             xSemaphoreGive(xGetDataMutex); // end of lock mutex
